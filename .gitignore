@@ -1,5 +1,6 @@
 .vscode
 build/
+data/
 
 # Created by https://www.gitignore.io/api/c,c++,linux,cmake
 # Edit at https://www.gitignore.io/?templates=c,c++,linux,cmake

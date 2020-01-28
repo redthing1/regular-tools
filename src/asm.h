@@ -82,6 +82,12 @@ void skip_chars(LexerState *st, CharType skip) {
     }
 }
 
+void skip_until(LexerState *st, char until) {
+    while (peek_char(st) != until) {
+        take_char(st);
+    }
+}
+
 LexResult lex(char *buf, size_t buf_sz) {
     LexerState st = {.buf = buf, .size = buf_sz, .pos = 0};
     int token_buf_size = 128;
@@ -95,6 +101,10 @@ LexResult lex(char *buf, size_t buf_sz) {
             tokens = realloc(tokens, token_buf_size * sizeof(tokens));
         }
         skip_chars(&st, SPACE);
+        if (peek_char(&st) == ';') { // comments
+            skip_until(&st, '\n');   // ignore the rest of the line
+            take_char(&st);          // eat the newline
+        }
         // process character
         char c = peek_char(&st);
         CharType c_type = classify_char(c);
