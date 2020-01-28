@@ -8,6 +8,7 @@ provides lexer and parser for the assembler
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "instr.h"
 
 typedef enum {
     UNKNOWN = 0,
@@ -27,6 +28,8 @@ typedef struct {
     char *cont;
     CharType kind;
 } Token;
+
+/* #region Lexer */
 
 typedef struct {
     Token *tokens;
@@ -179,3 +182,26 @@ LexResult lex(char *buf, size_t buf_sz) {
     res.token_count = token_count;
     return res;
 }
+
+/* #endregion */
+
+/* #region Parser */
+typedef struct {
+    Statement* statements;
+} Program;
+
+typedef struct {
+    int token; // token index
+    int cpos; // char position of reading
+} ParserState;
+
+Program parse(LexResult lexed) {
+    ParserState st = {.token = 0, .cpos = 0};
+
+    // TODO: parse the lex result into a list of instructions
+
+    Program prg = {.statements = NULL};
+    return prg;
+}
+
+/* #endregion */
