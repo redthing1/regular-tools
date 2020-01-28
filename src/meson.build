@@ -1,6 +1,6 @@
 project('regular-tools',
     'c',
-    default_options: ['c_std=c11']
+    default_options: ['c_std=c18']
 )
 
 disasm_sources = ['disasm.c']
