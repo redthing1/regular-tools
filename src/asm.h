@@ -6,6 +6,8 @@ provides lexer and parser for the assembler
 #pragma once
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef enum {
     UNKNOWN = 0,
@@ -29,7 +31,7 @@ typedef struct {
 typedef struct {
     char *buf;
     size_t size;
-    int pos;
+    size_t pos;
 } LexerState;
 
 CharType classify_char(char c) {
@@ -50,25 +52,24 @@ CharType classify_char(char c) {
     return UNKNOWN;
 }
 
-inline char peek_char(LexerState *st) { return st->buf[st->pos]; }
+char peek_char(LexerState *st) { return st->buf[st->pos]; }
 
-inline CharType peek_chartype(LexerState *st) { return classify_char(peek_char(st)); }
+CharType peek_chartype(LexerState *st) { return classify_char(peek_char(st)); }
 
-inline char take_char(LexerState *st) {
+char take_char(LexerState *st) {
     char c = peek_char(st);
     st->pos++;
     return c;
 }
 
 void take_chars(LexerState *st, char *working, CharType readType) {
-    while (!end_of_code() && (((int)peek_chartype(st) & (int)readType) > 0)) {
+    while (st->pos < st->size && (((int)peek_chartype(st) & (int)readType) > 0)) {
         char c = take_char(st);
         strcat(working, &c);
     }
 }
 
 void take_chars_until(LexerState *st, char *working, CharType stopType) {
-    // CharType next_type = peek_chartype();
     while (st->pos < st->size && (((int)peek_chartype(st) & (int)stopType) == 0)) {
         char c = take_char(st);
         strcat(working, &c);
@@ -87,7 +88,6 @@ LexResult lex(char *buf, size_t buf_sz) {
     Token *tokens = malloc(token_buf_size * sizeof(tokens));
     int token_count = 0;
     char *working = malloc(128);
-    char cbuf[2] = {0, '\0'};
 
     while (st.pos < st.size) {
         if (token_count >= token_buf_size) {
@@ -100,7 +100,7 @@ LexResult lex(char *buf, size_t buf_sz) {
         CharType c_type = classify_char(c);
         switch (c_type) {
         case ALPHA: { // start of identifier
-            read_tokens(working, ALPHA);
+            take_chars(&st, working, ALPHA);
             break;
         }
         case NUMERIC: { // start of num literal
@@ -121,11 +121,14 @@ LexResult lex(char *buf, size_t buf_sz) {
             tokens[token_count++] = tok;
             break;
         }
+        default: {
+            fprintf(stderr, "unrecognized character: %c\n", c);
+            break;
         }
-
-        LexResult res;
-        res.tokens = tokens;
-        res.token_count = token_count;
-        return res;
+        }
     }
+    LexResult res;
+    res.tokens = tokens;
+    res.token_count = token_count;
+    return res;
 }
