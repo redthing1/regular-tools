@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     }
 
     // open output file
-    FILE *ouf_fp = fopen(out_file, "rb");
+    FILE *ouf_fp = fopen(out_file, "wb");
     if (ouf_fp == NULL) {
         fprintf(stderr, "cannot open output file\n");
         return 1;
