@@ -116,7 +116,7 @@ LexResult lex(char *buf, size_t buf_sz) {
     int token_buf_size = 128;
     Token *tokens = malloc(token_buf_size * sizeof(tokens));
     int token_count = 0;
-    char *working;
+    char *working = NULL;
 
     while (st.pos < st.size) {
         if (token_count >= token_buf_size) {
@@ -130,6 +130,9 @@ LexResult lex(char *buf, size_t buf_sz) {
         }
         // process character
         char c = peek_char(&st);
+        if (working) { // clean up working
+            free(working);
+        }
         working = malloc(128);
         working[0] = '\0';
         CharType c_type = classify_char(c);

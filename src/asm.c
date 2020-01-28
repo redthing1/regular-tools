@@ -39,7 +39,11 @@ int main(int argc, char **argv) {
 
     // TODO: write out the program to binary
 
-    fclose(ouf_fp);
+    // clean up
+    free(inf_read.content);
+    free(lex_result.tokens);
+    
+    fclose(ouf_fp); // close output file
 
     return 0;
 }
