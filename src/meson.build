@@ -8,6 +8,7 @@ executable('regular-disasm', disasm_sources)
 
 asm_sources = [
     'asm.c', 'asm.h',
-    'util.h'
+    'util.h',
+    'instr.h',
 ]
 executable('regular-asm', asm_sources)

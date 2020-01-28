@@ -187,7 +187,8 @@ LexResult lex(char *buf, size_t buf_sz) {
 
 /* #region Parser */
 typedef struct {
-    Statement* statements;
+    Statement *statements;
+    int statement_count;
 } Program;
 
 typedef struct {
@@ -197,10 +198,13 @@ typedef struct {
 
 Program parse(LexResult lexed) {
     ParserState st = {.token = 0, .cpos = 0};
+    int statement_buf_size = 128;
+    Statement *statements = malloc(statement_buf_size * sizeof(statements));
+    int statement_count = 0;
 
     // TODO: parse the lex result into a list of instructions
 
-    Program prg = {.statements = NULL};
+    Program prg = {.statements = statements, statement_count = statement_count};
     return prg;
 }
 
