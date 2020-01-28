@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include "asm.h"
+#include "util.h"
 
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] assembler\n");
@@ -22,7 +24,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    FileReadResult inf_read = util_read_file_contents(inf_fp);
     fclose(inf_fp);
+    lex(inf_read.content, inf_read.size);
+
     fclose(ouf_fp);
 
     return 0;
