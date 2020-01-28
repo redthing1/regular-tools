@@ -16,9 +16,11 @@ typedef enum {
     SPACE = 1 << 2,   // ' '
     ARGSEP = 1 << 3,  // ','
     MARK = 1 << 4,    // ':'
-    SPECIAL = 1 << 5, // '$'
+    NUMSPECIAL = 1 << 5, // '$'
+    DIRECTIVE_PREFIX = 1 << 6, // '#'
     ALPHANUMERIC = ALPHA | NUMERIC,
-    NUMERICCONSTANT = NUMERIC | SPECIAL,
+    DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
+    NUMERICCONSTANT = NUMERIC | NUMSPECIAL,
 } CharType;
 
 typedef struct {
@@ -45,9 +47,11 @@ CharType classify_char(char c) {
         return ARGSEP;
     case ':':
         return MARK;
+    case '#':
+        return DIRECTIVE_PREFIX;
     case '$':
     case '^':
-        return SPECIAL;
+        return NUMSPECIAL;
     case ' ':
     case '\t':
     case '\r':
@@ -151,9 +155,15 @@ LexResult lex(char *buf, size_t buf_sz) {
             tokens[token_count++] = tok;
             break;
         }
-        case SPECIAL: {
+        case NUMSPECIAL: {
             take_chars(&st, working, NUMERICCONSTANT);
             Token tok = {.kind = NUMERICCONSTANT, .cont = working};
+            tokens[token_count++] = tok;
+            break;
+        }
+        case DIRECTIVE_PREFIX: {
+            take_chars(&st, working, DIRECTIVE);
+            Token tok = {.kind = DIRECTIVE, .cont = working};
             tokens[token_count++] = tok;
             break;
         }
