@@ -40,6 +40,8 @@ CharType classify_char(char c) {
     switch (c) {
     case ',':
         return ARGSEP;
+    case ':':
+        return MARK;
     case ' ':
     case '\t':
     case '\r':
