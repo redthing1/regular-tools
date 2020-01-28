@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 
     // clean up
     free(inf_read.content);
-    free(lex_result.tokens);
+    free_lex_result(lex_result);
     
     fclose(ouf_fp); // close output file
 

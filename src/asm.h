@@ -130,9 +130,6 @@ LexResult lex(char *buf, size_t buf_sz) {
         }
         // process character
         char c = peek_char(&st);
-        if (working) { // clean up working
-            free(working);
-        }
         working = malloc(128);
         working[0] = '\0';
         CharType c_type = classify_char(c);
@@ -184,6 +181,15 @@ LexResult lex(char *buf, size_t buf_sz) {
     res.tokens = tokens;
     res.token_count = token_count;
     return res;
+}
+
+void free_lex_result(LexResult lexed) {
+    // free all tokens
+    for (int i = 0; i < lexed.token_count; i++) {
+        free(lexed.tokens[i].cont);
+    }
+    // free token array
+    free(lexed.tokens);
 }
 
 /* #endregion */
