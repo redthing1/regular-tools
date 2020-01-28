@@ -12,3 +12,21 @@ typedef struct {
     OPCODE opcode;
     ARG a1, a2, a3;
 } Statement;
+
+#define OP_NOP 0x00
+#define OP_ADD 0x01
+#define OP_SUB 0x02
+#define OP_AND 0x03
+#define OP_ORR 0x04
+#define OP_XOR 0x05
+#define OP_NOT 0x06
+#define OP_LSH 0x07
+#define OP_ASH 0x08
+#define OP_TCU 0x09
+#define OP_TCS 0x0a
+#define OP_SET 0x0b
+#define OP_MOV 0x0c
+#define OP_LDW 0x0d
+#define OP_STW 0x0e
+#define OP_LDB 0x0f
+#define OP_STB 0x10
