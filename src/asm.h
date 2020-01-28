@@ -32,6 +32,8 @@ typedef struct {
     char *buf;
     size_t size;
     size_t pos;
+    int line;
+    int line_start;
 } LexerState;
 
 CharType classify_char(char c) {
@@ -40,6 +42,8 @@ CharType classify_char(char c) {
         return ARGSEP;
     case ' ':
     case '\t':
+    case '\r':
+    case '\n':
         return SPACE;
     }
     // now categories
@@ -58,6 +62,10 @@ CharType peek_chartype(LexerState *st) { return classify_char(peek_char(st)); }
 
 char take_char(LexerState *st) {
     char c = peek_char(st);
+    if (c == '\n') {
+        st->line++;
+        st->line_start = st->pos + 1;
+    }
     st->pos++;
     return c;
 }
@@ -89,7 +97,7 @@ void skip_until(LexerState *st, char until) {
 }
 
 LexResult lex(char *buf, size_t buf_sz) {
-    LexerState st = {.buf = buf, .size = buf_sz, .pos = 0};
+    LexerState st = {.buf = buf, .size = buf_sz, .pos = 0, .line = 1, .line_start = 0};
     int token_buf_size = 128;
     Token *tokens = malloc(token_buf_size * sizeof(tokens));
     int token_count = 0;
@@ -100,10 +108,10 @@ LexResult lex(char *buf, size_t buf_sz) {
             token_buf_size *= 2;
             tokens = realloc(tokens, token_buf_size * sizeof(tokens));
         }
-        skip_chars(&st, SPACE);
+        skip_chars(&st, SPACE);      // skip any leading whitespace
         if (peek_char(&st) == ';') { // comments
             skip_until(&st, '\n');   // ignore the rest of the line
-            take_char(&st);          // eat the newline
+            skip_chars(&st, SPACE);  // skip any remaining space
         }
         // process character
         char c = peek_char(&st);
@@ -132,7 +140,9 @@ LexResult lex(char *buf, size_t buf_sz) {
             break;
         }
         default: {
-            fprintf(stderr, "unrecognized character: %c\n", c);
+            fprintf(stderr, "unrecognized character: %c, [%d:%d]\n", c,
+                st.line, (int) (st.pos - st.line_start) + 1);
+            take_char(&st); // eat the character
             break;
         }
         }
