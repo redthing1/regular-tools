@@ -23,7 +23,7 @@ typedef struct {
 
 typedef struct {
     Token *tokens;
-    int tokenCount;
+    int token_count;
 } LexResult;
 
 typedef struct {
@@ -122,5 +122,10 @@ LexResult lex(char *buf, size_t buf_sz) {
             break;
         }
         }
+
+        LexResult res;
+        res.tokens = tokens;
+        res.token_count = token_count;
+        return res;
     }
 }
