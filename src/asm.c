@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
     // clean up
     free(inf_read.content);
     free_lex_result(lex_result);
+    free_program(prg);
     
     fclose(ouf_fp); // close output file
 

@@ -217,4 +217,9 @@ Program parse(LexResult lexed) {
     return prg;
 }
 
+void free_program(Program prg) {
+    // free statement array
+    free(prg.statements);
+}
+
 /* #endregion */
