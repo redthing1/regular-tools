@@ -5,7 +5,7 @@
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] assembler\n");
     if (argc < 2) {
-        printf("usage: asm --opts <in> <out>");
+        printf("usage: asm --opts <in> <out>\n");
     }
     char *in_file = argv[1];
     char *out_file = argv[2];
