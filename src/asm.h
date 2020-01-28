@@ -16,6 +16,9 @@ typedef enum {
     SPACE = 1 << 2,   // ' '
     ARGSEP = 1 << 3,  // ','
     MARK = 1 << 4,    // ':'
+    SPECIAL = 1 << 5, // '$'
+    ALPHANUMERIC = ALPHA | NUMERIC,
+    NUMERICCONSTANT = NUMERIC | SPECIAL,
 } CharType;
 
 typedef struct {
@@ -42,6 +45,9 @@ CharType classify_char(char c) {
         return ARGSEP;
     case ':':
         return MARK;
+    case '$':
+    case '^':
+        return SPECIAL;
     case ' ':
     case '\t':
     case '\r':
@@ -103,7 +109,7 @@ LexResult lex(char *buf, size_t buf_sz) {
     int token_buf_size = 128;
     Token *tokens = malloc(token_buf_size * sizeof(tokens));
     int token_count = 0;
-    char *working = malloc(128);
+    char *working;
 
     while (st.pos < st.size) {
         if (token_count >= token_buf_size) {
@@ -117,10 +123,14 @@ LexResult lex(char *buf, size_t buf_sz) {
         }
         // process character
         char c = peek_char(&st);
+        working = malloc(128);
+        working[0] = '\0';
         CharType c_type = classify_char(c);
         switch (c_type) {
         case ALPHA: { // start of identifier
-            take_chars(&st, working, ALPHA);
+            take_chars(&st, working, ALPHANUMERIC);
+            Token tok = {.kind = ALPHANUMERIC, .cont = working};
+            tokens[token_count++] = tok;
             break;
         }
         case NUMERIC: { // start of num literal
@@ -141,9 +151,14 @@ LexResult lex(char *buf, size_t buf_sz) {
             tokens[token_count++] = tok;
             break;
         }
+        case SPECIAL: {
+            take_chars(&st, working, NUMERICCONSTANT);
+            Token tok = {.kind = NUMERICCONSTANT, .cont = working};
+            tokens[token_count++] = tok;
+            break;
+        }
         default: {
-            fprintf(stderr, "unrecognized character: %c, [%d:%d]\n", c,
-                st.line, (int) (st.pos - st.line_start) + 1);
+            fprintf(stderr, "unrecognized character: %c, [%d:%d]\n", c, st.line, (int)(st.pos - st.line_start) + 1);
             take_char(&st); // eat the character
             break;
         }

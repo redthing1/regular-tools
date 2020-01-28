@@ -26,7 +26,13 @@ int main(int argc, char **argv) {
 
     FileReadResult inf_read = util_read_file_contents(inf_fp);
     fclose(inf_fp);
-    lex(inf_read.content, inf_read.size);
+
+    LexResult lex_result = lex(inf_read.content, inf_read.size);
+    for (int i = 0; i < lex_result.token_count; i++) {
+        Token tok = lex_result.tokens[i];
+        // print token
+        printf("tok: %s [%d]\n", tok.cont, (int) tok.kind);
+    }
 
     fclose(ouf_fp);
 
