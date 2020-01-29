@@ -211,6 +211,7 @@ typedef struct {
     LexResult *lexed;
     int token; // token index
     int cpos;  // char position of reading
+    int offset; // binary output position
 } ParserState;
 
 Token peek_token(ParserState *st) { 
@@ -320,7 +321,7 @@ Statement parse_statement(ParserState *st, char *mnem) {
 }
 
 Program parse(LexResult lexed) {
-    ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0};
+    ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(statements));
     int statement_count = 0;
@@ -366,6 +367,8 @@ Program parse(LexResult lexed) {
                 Statement stmt = parse_statement(&st, mnem);
                 // dump instruction info
                 statements[statement_count++] = stmt;
+                // update offset
+                st.offset += sizeof(ARG) * 4;
                 break;
             }
             }
