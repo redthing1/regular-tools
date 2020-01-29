@@ -5,8 +5,6 @@ tools for [RegularVM](https://github.com/regular-vm) ([spec](https://github.com/
 
 implements the [`REGULAR_ad` specification](doc/ext.md), which is the REGULAR architecture with the `_ad` extension set.
 
-[assembler documentation](doc/asm.md)
-
 ## build
 ```sh
 cd src
@@ -17,4 +15,4 @@ ninja # run ninja to build binaries
 
 ## doc
 
-- [assembler doc](doc/asm.md)
+[assembler documentation](doc/asm.md)
