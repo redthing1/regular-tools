@@ -21,6 +21,8 @@ Program compile_pseudo(Program inp) {
     Program prg = {.statements = new_statements, .status = 0, .entry = inp.entry};
     PseudoAssemblerState pas = {.pos = 0, .src = &inp};
 
+    // TODO: handle offset padding for larger compiles
+
     while (pas.pos < inp.statement_count) {
         if (new_statement_count > statement_buf_size - 1) {
             // out of space

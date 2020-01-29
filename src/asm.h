@@ -387,9 +387,6 @@ Program parse(LexResult lexed) {
                     sprintf(patch_cbuf, ".%d", lb_offset);
                     lexed.tokens[st.token].cont = patch_cbuf;
                     lexed.tokens[st.token].kind = NUMERIC_CONSTANT;
-                    // check patched
-                    Token check_patch = peek_token(&st);
-                    bool valid = check_patch.kind == NUMERIC_CONSTANT;
                 } else {
                     // this is a label definition ("label:")
                     // store the label
@@ -459,7 +456,10 @@ void free_program(Program prg) {
 void write_program(FILE *ouf, Program prg) {
     char w = '\0';
     // write header
-    // TODO: header format
+    const char *REG = "reg";
+    fwrite(&REG, sizeof(REG), 3, ouf);             // magic
+    fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
+
     // write code
     for (int i = 0; i < prg.statement_count; i++) {
         Statement st = prg.statements[i];
