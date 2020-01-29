@@ -42,7 +42,7 @@ typedef struct {
 
 /* #region OPCODE and REG definitions */
 
-// opcodes
+// opcodes - BASE
 #define OP_NOP 0x00
 #define OP_ADD 0x01
 #define OP_SUB 0x02
@@ -60,6 +60,12 @@ typedef struct {
 #define OP_STW 0x0e
 #define OP_LDB 0x0f
 #define OP_STB 0x10
+
+// opcodes - _ad/hardware
+#define OP_HLT 0x70
+
+// opcodes - _ad/pseudo
+#define OP_JMP 0xa0
 
 // registers
 #define REG_RXX 0x01
@@ -133,6 +139,10 @@ InstructionInfo get_instruction_info(char *mnem) {
         return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_LDB};
     } else if (streq(mnem, "stb")) {
         return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_STB};
+    } else if (streq(mnem, "hlt")) {
+        return (InstructionInfo){.type = INSTR_OP, .opcode = OP_HLT};
+    } else if (streq(mnem, "jmp")) {
+        return (InstructionInfo){.type = INSTR_OP_R, .opcode = OP_JMP};
     } else {
         // unrecognized mnem
         return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};
@@ -175,6 +185,8 @@ const char *get_instruction_mnem(OPCODE op) {
         return "ldb";
     case OP_STB:
         return "stb";
+    case OP_HLT:
+        return "hlt";
     default:
         return NULL; // unrecognized mnemonic
         break;

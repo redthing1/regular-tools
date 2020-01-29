@@ -13,6 +13,6 @@ system instructions are extensions to the architecture specification and require
 
 pseudo instructions are extensions to the instruction set implemented by expansion to equivalent hardware instructions by the assembler.
 
-| Name  | Args | Implementation      | Description                      |
-|-------|------|---------------------|----------------------------------|
-| `jmp` | rA   | Setting `sp` value. | Jump to address specified in rA. |
+| Name  | Encoding | Implementation      | Description                      |
+|-------|----------|---------------------|----------------------------------|
+| `jmp` | 0xa0 rA  | Setting `sp` value. | Jump to address specified in rA. |
