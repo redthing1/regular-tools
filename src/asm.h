@@ -6,6 +6,7 @@ provides lexer and parser for the assembler
 #pragma once
 
 #include "instr.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,11 +18,11 @@ typedef enum {
     SPACE = 1 << 2,            // ' '
     ARGSEP = 1 << 3,           // ','
     MARK = 1 << 4,             // ':'
-    NUMSPECIAL = 1 << 5,       // '$'
+    NUM_SPECIAL = 1 << 5,      // '$'
     DIRECTIVE_PREFIX = 1 << 6, // '#'
     IDENTIFIER = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
-    NUMERICCONSTANT = NUMERIC | NUMSPECIAL,
+    NUMERIC_CONSTANT = NUMERIC | NUM_SPECIAL,
 } CharType;
 
 typedef struct {
@@ -54,7 +55,7 @@ CharType classify_char(char c) {
         return DIRECTIVE_PREFIX;
     case '$':
     case '^':
-        return NUMSPECIAL;
+        return NUM_SPECIAL;
     case ' ':
     case '\t':
     case '\r':
@@ -158,9 +159,9 @@ LexResult lex(char *buf, size_t buf_sz) {
             tokens[token_count++] = tok;
             break;
         }
-        case NUMSPECIAL: {
-            take_chars(&st, working, NUMERICCONSTANT);
-            Token tok = {.kind = NUMERICCONSTANT, .cont = working};
+        case NUM_SPECIAL: {
+            take_chars(&st, working, NUMERIC_CONSTANT);
+            Token tok = {.kind = NUMERIC_CONSTANT, .cont = working};
             tokens[token_count++] = tok;
             break;
         }
@@ -230,6 +231,10 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
+uint32_t parse_numeric(ParserState *st) {
+    // TODO: read token and interpret numeric value
+}
+
 Statement read_statement(ParserState *st, char *mnem) {
     InstructionInfo instr_info = get_instruction_info(mnem);
     Statement stmt = {.opcode = 0, .a1 = 0, .a2 = 0, .a3 = 0, .type = instr_info.type};
@@ -253,6 +258,22 @@ Statement read_statement(ParserState *st, char *mnem) {
     if ((instr_info.type & INSTR_K_R3) > 0) {
         t3 = expect_token(st, IDENTIFIER);
         stmt.a3 = get_register(t3.cont);
+    }
+    if ((instr_info.type & INSTR_K_I1) > 0) {
+        // 24-bit constant
+        uint32_t val = parse_numeric(st);
+        stmt.a1 = (ARG)(val >> 16);        // upper 8
+        stmt.a2 = (ARG)((val >> 8) & 255); // middle 8
+        stmt.a3 = (ARG)(val & 255);        // lower 8
+    } else if ((instr_info.type & INSTR_K_I2) > 0) {
+        // 16-bit constant
+        uint32_t val = parse_numeric(st);
+        stmt.a2 = (ARG)(val >> 8);  // upper 8
+        stmt.a3 = (ARG)(val & 255); // lower 8
+    } else if ((instr_info.type & INSTR_K_I3) > 0) {
+        // 8-bit constant
+        uint32_t val = parse_numeric(st);
+        stmt.a3 = (ARG)val;
     }
     return stmt;
 }
