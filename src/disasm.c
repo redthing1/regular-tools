@@ -6,7 +6,7 @@
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] disassembler\n");
     if (argc < 2) {
-        printf("usage: disasm --opts <in>\n");
+        printf("usage: disasm <in>\n");
     }
 
     char *in_file = argv[1];

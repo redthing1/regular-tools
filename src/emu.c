@@ -7,7 +7,7 @@
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] emulator\n");
     if (argc < 2) {
-        printf("usage: emu --opts <in>\n");
+        printf("usage: emu <in>\n");
     }
 
     char *in_file = argv[1];
