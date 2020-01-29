@@ -71,6 +71,7 @@ typedef struct {
 // opcodes - _ad/hardware
 #define OP_HLT 0x70
 #define OP_INT 0x71
+#define OP_BRX 0x72
 
 // opcodes - _ad/pseudo
 #define OP_JMP 0xa0
@@ -153,6 +154,8 @@ InstructionInfo get_instruction_info(char *mnem) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP, .opcode = OP_HLT};
     } else if (streq(mnem, "int")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R, .opcode = OP_INT};
+    } else if (streq(mnem, "brx")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_BRX};
     } else if (streq(mnem, "jmp")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R, .opcode = OP_JMP};
     } else if (streq(mnem, "jmi")) {
@@ -205,6 +208,8 @@ const char *get_instruction_mnem(OPCODE op) {
         return "hlt";
     case OP_INT:
         return "int";
+    case OP_BRX:
+        return "brx";
     default:
         return NULL; // unrecognized mnemonic
         break;

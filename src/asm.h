@@ -232,7 +232,7 @@ Token expect_token(ParserState *st, CharType type) {
         return take_token(st);
     } else {
         // expected token not found
-        printf("unexpected token@%d: %s [%d]\n", st->cpos, next.cont, next.kind);
+        printf("unexpected token#%d @%d: %s [%d]\n", st->token, st->cpos, next.cont, next.kind);
         return (Token){.cont = NULL, .kind = UNKNOWN};
     }
 }
@@ -368,6 +368,7 @@ Program parse(LexResult lexed) {
                         Label *lb = (Label *)(n->data);
                         if (streq(lb->label, lbref.cont)) {
                             lb_offset = lb->offset;
+                            break;
                         }
                         n = n->link;
                     } while (n);
@@ -417,6 +418,7 @@ Program parse(LexResult lexed) {
             Label *lb = (Label *)(n->data);
             if (streq(lb->label, entry_lbl)) {
                 lb_offset = lb->offset;
+                break;
             }
             n = n->link;
         } while (n);
