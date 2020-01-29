@@ -4,8 +4,8 @@ provides instruction declarations
 */
 
 #pragma once
-#include <stdint.h>
 #include "util.h"
+#include <stdint.h>
 
 typedef uint8_t OPCODE;
 typedef uint8_t ARG;
@@ -106,6 +106,32 @@ InstructionInfo get_instruction_info(char *mnem) {
         return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_SUB};
     } else if (streq(mnem, "and")) {
         return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_AND};
+    } else if (streq(mnem, "orr")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_ORR};
+    } else if (streq(mnem, "xor")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_XOR};
+    } else if (streq(mnem, "not")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_NOT};
+    } else if (streq(mnem, "lsh")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_LSH};
+    } else if (streq(mnem, "ash")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_ASH};
+    } else if (streq(mnem, "tcu")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_TCU};
+    } else if (streq(mnem, "tcs")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_TCS};
+    } else if (streq(mnem, "set")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_I, .opcode = OP_SET};
+    } else if (streq(mnem, "mov")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_MOV};
+    } else if (streq(mnem, "ldw")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_LDW};
+    } else if (streq(mnem, "stw")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_STW};
+    } else if (streq(mnem, "ldb")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_LDB};
+    } else if (streq(mnem, "stb")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_STB};
     } else {
         // unrecognized mnem
         return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};

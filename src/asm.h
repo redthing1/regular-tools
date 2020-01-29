@@ -245,15 +245,17 @@ uint32_t parse_numeric(ParserState *st) {
     switch (pfx) {
     case '$': {
         // TODO: interpret as base-16
-        return 0;
+        val = 0;
+        break;
     }
     case '.': {
         // interpret as base-10
         val = atoi(num_str);
+        break;
     }
     default:
         // invalid numeric
-        printf("ERR: invalid numeric prefix %s", pfx);
+        printf("ERR: invalid numeric prefix %c", pfx);
     }
     free(num_str); // free numstr
     return val;
