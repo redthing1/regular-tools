@@ -61,7 +61,11 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         ARG d2 = emu_st->mem[emu_st->reg[0] + 2];
         ARG d3 = emu_st->mem[emu_st->reg[0] + 3];
         emu_st->reg[0] += 4; // advance PC
-        Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
+        // figure out instruction and interpret arguments
+        const char *mnem = get_instruction_mnem(op);
+        InstructionInfo instr_info = get_instruction_info((char*) mnem);
+        Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3,
+            .type = instr_info.type};
         dump_statement(stmt);
         emu_exec(emu_st, stmt);
     }

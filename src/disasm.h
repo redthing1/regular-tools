@@ -35,7 +35,6 @@ Program decode_program(char *buf, size_t buf_sz) {
         ARG a1 = take_arg(&st);
         ARG a2 = take_arg(&st);
         ARG a3 = take_arg(&st);
-
         
         // figure out instruction and interpret arguments
         const char *mnem = get_instruction_mnem(op);
