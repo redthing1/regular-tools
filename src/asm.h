@@ -365,8 +365,8 @@ Program parse(LexResult lexed) {
         case IDENTIFIER: {
             Token id_token = take_token(&st);
             Token id_next = peek_token(&st);
-            switch (id_next.kind) {
-            case MARK: {
+            bool instr = true;
+            if (id_next.kind == MARK) {
                 Token mark = expect_token(&st, MARK); // eat the mark
                 // check if it's a double tok
                 if (strlen(mark.cont) > 1) { // check if :: instead of :
@@ -377,7 +377,7 @@ Program parse(LexResult lexed) {
                     ListNode *n = labels.top;
                     int lb_offset = 0;
                     do {
-                        Label* lb = (Label *)(n->data);
+                        Label *lb = (Label *)(n->data);
                         if (streq(lb->label, lbref.cont)) {
                             lb_offset = lb->offset;
                         }
@@ -385,7 +385,7 @@ Program parse(LexResult lexed) {
                     } while (n);
                     // hotpatch the token (free first)
                     free(lbref.cont);
-                    char* patch_cbuf = malloc(128);
+                    char *patch_cbuf = malloc(128);
                     patch_cbuf[0] = '\0';
                     sprintf(patch_cbuf, ".%d", lb_offset);
                     Token patch_tok = {.cont = patch_cbuf, .kind = NUMERIC};
@@ -399,11 +399,10 @@ Program parse(LexResult lexed) {
                     label->label = id_token.cont;
                     label->offset = st.offset;
                     list_push(&labels, label);
+                    instr = false;
                 }
-                break;
             }
-
-            default: {
+            if (instr) {
                 // this is an instruction
                 // look at the instruction name and figure out what to do
                 char *mnem = id_token.cont;
@@ -412,8 +411,6 @@ Program parse(LexResult lexed) {
                 statements[statement_count++] = stmt;
                 // update offset
                 st.offset += sizeof(ARG) * 4;
-                break;
-            }
             }
             break;
         }
