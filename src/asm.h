@@ -312,14 +312,14 @@ Statement parse_statement(ParserState *st, char *mnem) {
     if ((instr_info.type & INSTR_K_I1) > 0) {
         // 24-bit constant
         uint32_t val = parse_numeric(st);
-        stmt.a1 = (ARG)(val >> 16);        // upper 8
+        stmt.a1 = (ARG)(val & 255);        // lower 8
         stmt.a2 = (ARG)((val >> 8) & 255); // middle 8
-        stmt.a3 = (ARG)(val & 255);        // lower 8
+        stmt.a3 = (ARG)(val >> 16);        // upper 8
     } else if ((instr_info.type & INSTR_K_I2) > 0) {
         // 16-bit constant
         uint32_t val = parse_numeric(st);
-        stmt.a2 = (ARG)(val >> 8);  // upper 8
-        stmt.a3 = (ARG)(val & 255); // lower 8
+        stmt.a2 = (ARG)(val & 255); // lower 8
+        stmt.a3 = (ARG)(val >> 8);  // upper 8
     } else if ((instr_info.type & INSTR_K_I3) > 0) {
         // 8-bit constant
         uint32_t val = parse_numeric(st);
@@ -497,10 +497,10 @@ void dump_statement(Statement st) {
         printf(" %-3s", get_register_name(st.a3));
     }
     if ((st.type & INSTR_K_I1) > 0) {
-        uint32_t v = (st.a1 << 16) | (st.a2 << 8) | st.a3;
+        uint32_t v = st.a1 | (st.a2 << 8) | (st.a3 << 16);
         printf(" $%02x", v);
     } else if ((st.type & INSTR_K_I2) > 0) {
-        uint32_t v = (st.a2 << 8) | st.a3;
+        uint32_t v = st.a2 << 8 | (st.a3 << 8);
         printf(" $%02x", v);
     } else if ((st.type & INSTR_K_I3) > 0) {
         printf(" $%02x", st.a3);
