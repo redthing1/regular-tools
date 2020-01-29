@@ -1,15 +1,30 @@
-#include <stdio.h>
-#include "util.h"
 #include "asm.h"
 #include "asm_ext.h"
+#include "util.h"
+#include <stdio.h>
+
+typedef struct {
+    bool write_header;
+} AssemblerOptions;
 
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] assembler\n");
     if (argc < 3) {
-        printf("usage: asm --opts <in> <out>\n");
+        printf("usage: asm <in> <out> --opts\n");
     }
     char *in_file = argv[1];
     char *out_file = argv[2];
+
+    AssemblerOptions options = {
+        .write_header = true,
+    };
+
+    for (int i = 3; i < argc; i++) {
+        char *flg = argv[i];
+        if (streq(flg, "--bare")) {
+            options.write_header = false;
+        }
+    }
 
     // open input file
     FILE *inf_fp = fopen(in_file, "rb");
@@ -34,7 +49,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < lex_result.token_count; i++) {
         Token tok = lex_result.tokens[i];
         // print token
-        printf("%4d TOK: %10s [%3d]\n", i, tok.cont, (int) tok.kind);
+        printf("%4d TOK: %10s [%3d]\n", i, tok.cont, (int)tok.kind);
     }
     // parse the tokens into a program
     printf("== PARSE ==\n");
@@ -47,7 +62,7 @@ int main(int argc, char **argv) {
         printf("== DUMP ==\n");
         dump_program(prg_out);
         // write out the program to binary
-        write_program(ouf_fp, prg_out);
+        write_program(ouf_fp, prg_out, options.write_header);
     }
 
     // clean up

@@ -451,14 +451,18 @@ void free_program(Program prg) {
 
 /* #region Binary */
 
-void write_program(FILE *ouf, Program prg) {
+void write_program(FILE *ouf, Program prg, bool write_header) {
     char w = '\0';
-    // write header
-    const char *REG = "rg";
-    fputs(REG, ouf);                               // magic
-    fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
-    uint16_t code_size = prg.statement_count * INSTR_SIZE;
-    fwrite(&code_size, sizeof(code_size), 1, ouf); // code size
+    if (write_header) {
+        // write header
+        const char *REG = "rg";
+        fputs(REG, ouf);                               // magic
+        fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
+        uint16_t code_size = prg.statement_count * INSTR_SIZE;
+        fwrite(&code_size, sizeof(code_size), 1, ouf); // code size
+    } else {
+        printf("--bare given, not writing header\n");
+    }
 
     // write code
     for (int i = 0; i < prg.statement_count; i++) {
