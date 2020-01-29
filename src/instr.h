@@ -9,8 +9,9 @@ provides instruction declarations
 
 #define INSTR_SIZE 4
 
-typedef uint8_t BYTE;  // byte size
-typedef uint32_t WORD; // word size
+typedef uint8_t BYTE;   // byte size
+typedef int32_t WORD;   // word size
+typedef uint32_t UWORD; // unsigned word
 
 typedef BYTE ARG;   // args are one byte
 typedef ARG OPCODE; // opcodes are one arg
