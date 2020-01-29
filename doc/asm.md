@@ -15,5 +15,5 @@ main:
     set r2 .10 ; . denotes a dec constant
     add r1 r1 r2
     ; test jump
-    ; jmp :test1
+    jmp ::test1
 ```
