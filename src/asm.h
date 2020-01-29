@@ -21,9 +21,10 @@ typedef enum {
     MARK = 1 << 4,             // ':'
     NUM_SPECIAL = 1 << 5,      // '$'
     DIRECTIVE_PREFIX = 1 << 6, // '#'
+    NUMERIC_HEX = 1 << 7,      // beef
     IDENTIFIER = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
-    NUMERIC_CONSTANT = NUMERIC | NUM_SPECIAL,
+    NUMERIC_CONSTANT = NUMERIC | NUMERIC_HEX | NUM_SPECIAL,
 } CharType;
 
 typedef struct {
@@ -64,13 +65,17 @@ CharType classify_char(char c) {
         return SPACE;
     }
     // now categories
+    CharType type = UNKNOWN;
+    if ((c >= 'a' && c <= 'f')) {
+        type |= NUMERIC_HEX;
+    }
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-        return ALPHA;
+        type |= ALPHA;
     } else if (c >= '0' && c <= '9') {
-        return NUMERIC;
+        type |= NUMERIC;
     }
 
-    return UNKNOWN;
+    return type;
 }
 
 char peek_char(LexerState *st) { return st->buf[st->pos]; }
@@ -294,7 +299,7 @@ Statement parse_statement(ParserState *st, char *mnem) {
     }
 
     stmt.opcode = instr_info.opcode; // set opcode
-    stmt.sz = instr_info.fin_sz; // set instruction size
+    stmt.sz = instr_info.fin_sz;     // set instruction size
 
     // read the instruction data
     Token t1, t2, t3;
@@ -314,14 +319,14 @@ Statement parse_statement(ParserState *st, char *mnem) {
     if ((instr_info.type & INSTR_K_I1) > 0) {
         // 24-bit constant
         uint32_t val = parse_numeric(st);
-        stmt.a1 = (ARG)(val & 255);        // lower 8
-        stmt.a2 = (ARG)((val >> 8) & 255); // middle 8
-        stmt.a3 = (ARG)(val >> 16);        // upper 8
+        stmt.a1 = (ARG)(val & 0xff);        // lower 8
+        stmt.a2 = (ARG)((val >> 8) & 0xff); // middle 8
+        stmt.a3 = (ARG)(val >> 16);         // upper 8
     } else if ((instr_info.type & INSTR_K_I2) > 0) {
         // 16-bit constant
         uint32_t val = parse_numeric(st);
-        stmt.a2 = (ARG)(val & 255); // lower 8
-        stmt.a3 = (ARG)(val >> 8);  // upper 8
+        stmt.a2 = (ARG)(val & 0xff); // lower 8
+        stmt.a3 = (ARG)(val >> 8);   // upper 8
     } else if ((instr_info.type & INSTR_K_I3) > 0) {
         // 8-bit constant
         uint32_t val = parse_numeric(st);
