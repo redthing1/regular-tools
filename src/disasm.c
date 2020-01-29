@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include "util.h"
-#include "asm.h"
 #include "disasm.h"
+#include "asm.h"
+#include "util.h"
+#include <stdio.h>
 
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] disassembler\n");
@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
     }
 
     char *in_file = argv[1];
-    
+
     // open input file
     FILE *inf_fp = fopen(in_file, "rb");
     if (inf_fp == NULL) {
@@ -22,6 +22,10 @@ int main(int argc, char **argv) {
     fclose(inf_fp);
 
     Program prg = decode_program(inf_read.content, inf_read.size);
+    if (prg.status == 0) { // successful decode
+        printf("== DUMP ==\n");
+        dump_program(prg);
+    }
 
     // clean up
     free(inf_read.content);
