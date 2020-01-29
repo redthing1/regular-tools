@@ -199,6 +199,7 @@ void free_lex_result(LexResult lexed) {
 /* #endregion */
 
 /* #region Parser */
+
 typedef struct {
     Statement *statements;
     int statement_count;
@@ -379,4 +380,31 @@ void free_program(Program prg) {
     free(prg.statements);
 }
 
+/* #endregion */
+
+/* #region Debugging */
+void dump_program(Program prg) {
+    for (int i = 0; i < prg.statement_count; i++) {
+        Statement st = prg.statements[i];
+        const char *op_name = get_instruction_mnem(st.opcode);
+        printf("OP: [%3s]", op_name);
+        if ((st.type & INSTR_K_R1) > 0) {
+            printf(" %3s", get_register_name(st.a1));
+        }
+        if ((st.type & INSTR_K_R2) > 0) {
+            printf(" %3s", get_register_name(st.a2));
+        }
+        if ((st.type & INSTR_K_R3) > 0) {
+            printf(" %3s", get_register_name(st.a3));
+        }
+        if ((st.type & INSTR_K_I1) > 0) {
+            printf(" %3x", st.a1);
+        } else if ((st.type & INSTR_K_I2) > 0) {
+            printf(" %3x", st.a2);
+        } else if ((st.type & INSTR_K_I3) > 0) {
+            printf(" %3x", st.a3);
+        }
+        printf("\n");
+    }
+}
 /* #endregion */

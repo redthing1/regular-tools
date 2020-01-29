@@ -40,11 +40,7 @@ int main(int argc, char **argv) {
     Program prg = parse(lex_result);
     if (prg.status == 0) { // successful program
         printf("== DUMP ==\n");
-        // dump the program
-        for (int i = 0; i < prg.statement_count; i++) {
-            Statement st = prg.statements[i];
-            printf("OP: [%2x] %2x %2x %2x\n", st.opcode, st.a1, st.a2, st.a3);
-        }
+        dump_program(prg);
         // TODO: write out the program to binary   
     }
 

@@ -138,12 +138,113 @@ InstructionInfo get_instruction_info(char *mnem) {
     }
 }
 
+const char *get_instruction_mnem(OPCODE op) {
+    switch (op) {
+    case OP_NOP:
+        return "nop";
+    case OP_ADD:
+        return "add";
+    case OP_SUB:
+        return "sub";
+    case OP_AND:
+        return "and";
+    case OP_ORR:
+        return "orr";
+    case OP_XOR:
+        return "xor";
+    case OP_NOT:
+        return "not";
+    case OP_LSH:
+        return "lsh";
+    case OP_ASH:
+        return "ash";
+    case OP_TCU:
+        return "tcu";
+    case OP_TCS:
+        return "tcs";
+    case OP_SET:
+        return "set";
+    case OP_MOV:
+        return "mov";
+    case OP_LDW:
+        return "ldw";
+    case OP_STW:
+        return "stw";
+    case OP_LDB:
+        return "ldb";
+    case OP_STB:
+        return "stb";
+    default:
+        return NULL; // unrecognized mnemonic
+        break;
+    }
+}
+
 ARG get_register(char *mnem) {
     if (streq(mnem, "rX")) {
         return REG_RXX;
     } else if (streq(mnem, "r1")) {
         return REG_R01;
+    } else if (streq(mnem, "r2")) {
+        return REG_R02;
+    } else if (streq(mnem, "r3")) {
+        return REG_R03;
+    } else if (streq(mnem, "r4")) {
+        return REG_R04;
+    } else if (streq(mnem, "r5")) {
+        return REG_R05;
+    } else if (streq(mnem, "r6")) {
+        return REG_R06;
+    } else if (streq(mnem, "r7")) {
+        return REG_R07;
+    } else if (streq(mnem, "r8")) {
+        return REG_R08;
+    } else if (streq(mnem, "r9")) {
+        return REG_R09;
+    } else if (streq(mnem, "r10")) {
+        return REG_R10;
+    } else if (streq(mnem, "r11")) {
+        return REG_R11;
+    } else if (streq(mnem, "r12")) {
+        return REG_R12;
+    } else if (streq(mnem, "r13")) {
+        return REG_R13;
+    } else if (streq(mnem, "r14")) {
+        return REG_R14;
+    } else if (streq(mnem, "r15")) {
+        return REG_R15;
     }
     // unrecognized mnem
     return REG_RXX;
+}
+
+const char *get_register_name(ARG reg) {
+    switch (reg) {
+    case REG_RXX:
+        return "rX";
+    case REG_RPC:
+        return "pc";
+    case REG_R01:
+        return "r1";
+    case REG_R02:
+        return "r2";
+    case REG_R03:
+        return "r3";
+    case REG_R04:
+        return "r4";
+    case REG_R05:
+        return "r5";
+    case REG_R06:
+        return "r6";
+    case REG_R07:
+        return "r7";
+    case REG_R08:
+        return "r8";
+    case REG_RAT:
+        return "at";
+    case REG_RSP:
+        return "sp";
+    default:
+        return NULL; // unrecognized mnemonic
+    }
 }
