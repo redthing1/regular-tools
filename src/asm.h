@@ -294,6 +294,7 @@ Statement parse_statement(ParserState *st, char *mnem) {
     }
 
     stmt.opcode = instr_info.opcode; // set opcode
+    stmt.sz = instr_info.fin_sz; // set instruction size
 
     // read the instruction data
     Token t1, t2, t3;
