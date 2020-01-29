@@ -10,6 +10,7 @@ provides emulation capability
 
 const size_t MEMORY_SIZE = 64 * 1024; // 65K
 const size_t REGISTER_COUNT = 32;
+const size_t SIMPLE_REGISTER_COUNT = 8;
 
 typedef struct {
     ARG *reg;
@@ -21,8 +22,15 @@ typedef struct {
 EmulatorState *emu_init() {
     EmulatorState *emu_st = malloc(sizeof(EmulatorState));
     emu_st->mem_sz = MEMORY_SIZE;
-    emu_st->mem = malloc(MEMORY_SIZE * sizeof(BYTE));
-    emu_st->reg = malloc(REGISTER_COUNT * sizeof(ARG));
+
+    size_t mem_alloc_sz = MEMORY_SIZE * sizeof(BYTE);
+    emu_st->mem = malloc(mem_alloc_sz);
+    size_t reg_alloc_sz = REGISTER_COUNT * sizeof(ARG);
+    emu_st->reg = malloc(reg_alloc_sz);
+
+    // initialize all data
+    memset(emu_st->mem, 0, mem_alloc_sz);
+    memset(emu_st->reg, 0, reg_alloc_sz);
 
     return emu_st;
 }
@@ -40,6 +48,21 @@ RGHeader emu_load(EmulatorState *emu_st, int offset, char *program, size_t progr
     return hd;
 }
 
+/**
+ * Dump the emulator state for debugging
+ */
+void emu_dump(EmulatorState *emu_st) {
+    printf("== STATE ==\n");
+    // dump registers
+    for (ARG i = 0; i < SIMPLE_REGISTER_COUNT; i++) {
+        const char *reg_name = get_register_name(i);
+        printf("%5s: %x\n", reg_name, emu_st->reg[i]);
+    }
+}
+
+/**
+ * Execute an instruction in the emulator
+ */
 void emu_exec(EmulatorState *emu_st, Statement instr) {
     switch (instr.opcode) {
     case OP_NOP: {
@@ -71,9 +94,12 @@ void emu_exec(EmulatorState *emu_st, Statement instr) {
     }
 }
 
+/**
+ * Start emulator execution at an entry point in memory
+ */
 void emu_run(EmulatorState *emu_st, ARG entry) {
     // set PC regiemu_ster to entrypoint
-    emu_st->reg[0] = entry;
+    emu_st->reg[REG_RPC] = entry;
     emu_st->executing = true;
     // emu_start decode loop
     while (emu_st->executing) {
@@ -83,10 +109,12 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         ARG d2 = emu_st->mem[emu_st->reg[0] + 2];
         ARG d3 = emu_st->mem[emu_st->reg[0] + 3];
         emu_st->reg[0] += INSTR_SIZE; // advance PC
-        Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3 };
+        Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
         populate_statement(&stmt); // interpret instruction type
-        dump_statement(stmt);
-        emu_exec(emu_st, stmt);
+
+        dump_statement(stmt);   // dump statement
+        emu_exec(emu_st, stmt); // execute statement
+        emu_dump(emu_st);       // dump state
     }
 }
 
