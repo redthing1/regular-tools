@@ -4,6 +4,7 @@ provides instruction declarations
 */
 
 #pragma once
+#include "util.h"
 
 typedef char OPCODE;
 typedef char ARG;
@@ -52,6 +53,7 @@ typedef struct {
 #define OP_STB 0x10
 
 // registers
+#define REG_RXX 0x01
 #define REG_RPC 0x70
 #define REG_R01 0x71
 #define REG_R02 0x72
@@ -87,17 +89,25 @@ typedef struct {
 
 /* #endregion */
 
-InstructionInfo get_instruction_info(char *mnemonic) {
-    if (strcmp(mnemonic, "nop")) {
+InstructionInfo get_instruction_info(char *mnem) {
+    if (streq(mnem, "nop")) {
         return (InstructionInfo){.type = INSTR_OP, .opcode = OP_NOP};
-    } else if (strcmp(mnemonic, "add")) {
+    } else if (streq(mnem, "add")) {
         return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_ADD};
-    } else if (strcmp(mnemonic, "sub")) {
+    } else if (streq(mnem, "sub")) {
         return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_SUB};
-    } else if (strcmp(mnemonic, "and")) {
+    } else if (streq(mnem, "and")) {
         return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_AND};
     } else {
-        // unrecognized mnemonic
+        // unrecognized mnem
         return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};
+    }
+}
+
+ARG get_register(char *mnem) {
+    if (streq(mnem, "rX")) {
+        return REG_RXX;
+    } else if (streq(mnem, "r1")) {
+        return REG_R01;
     }
 }

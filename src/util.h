@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct {
     char* content;
@@ -24,4 +25,8 @@ FileReadResult util_read_file_contents(FILE *fp) {
 
     FileReadResult res = {.content = buffer, .size = size};
     return res;
+}
+
+bool streq(char* s1, char* s2) {
+    return strcmp(s1, s2) == 0;
 }

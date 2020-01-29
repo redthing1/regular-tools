@@ -230,7 +230,7 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
-Statement read_statement(char *mnem) {
+Statement read_statement(ParserState *st, char *mnem) {
     InstructionInfo instr_info = get_instruction_info(mnem);
     Statement stmt = {.opcode = 0, .a1 = 0, .a2 = 0, .a3 = 0, .type = instr_info.type};
     if (instr_info.type == INSTR_INV) {
@@ -241,6 +241,11 @@ Statement read_statement(char *mnem) {
     
     stmt.opcode = instr_info.opcode; // set opcode
     // read the instruction data
+    Token t1, t2, t3;
+    if (instr_info.type == INSTR_OP_R) {
+        t1 = expect_token(st, IDENTIFIER);
+        stmt.a1 = get_register(t1.cont);
+    }
     return stmt;
 }
 
@@ -282,7 +287,7 @@ Program parse(LexResult lexed) {
                 // this is an instruction
                 // look at the instruction name and figure out what to do
                 char *mnem = id_token.cont;
-                Statement stmt = read_statement(mnem);
+                Statement stmt = read_statement(&st, mnem);
                 // dump instruction info
 
                 break;
