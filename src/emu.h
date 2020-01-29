@@ -48,16 +48,23 @@ RGHeader emu_load(EmulatorState *emu_st, int offset, char *program, size_t progr
     return hd;
 }
 
+void dump_rg(EmulatorState *emu_st, ARG rg) {
+    const char *reg_name = get_register_name(rg);
+    printf("%5s: $%04x\n", reg_name, emu_st->reg[rg]);
+}
+
 /**
  * Dump the emulator state for debugging
  */
 void emu_dump(EmulatorState *emu_st) {
     printf("== STATE ==\n");
-    // dump registers
+    // dump main registers
     for (ARG i = 0; i < SIMPLE_REGISTER_COUNT; i++) {
-        const char *reg_name = get_register_name(i);
-        printf("%5s: $%04x\n", reg_name, emu_st->reg[i]);
+        dump_rg(emu_st, i);
     }
+    // dump special registers
+    dump_rg(emu_st, REG_RSP);
+    dump_rg(emu_st, REG_RAT);
 }
 
 /**
