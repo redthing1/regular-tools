@@ -213,7 +213,12 @@ typedef struct {
     int cpos;  // char position of reading
 } ParserState;
 
-Token peek_token(ParserState *st) { return st->lexed->tokens[st->token]; }
+Token peek_token(ParserState *st) { 
+    if (st->cpos > st->lexed->token_count - 1) {
+        return (Token) {.kind = UNKNOWN};
+    }
+    return st->lexed->tokens[st->token];
+}
 
 Token take_token(ParserState *st) {
     Token tok = peek_token(st);
@@ -347,7 +352,8 @@ Program parse(LexResult lexed) {
                 printf("TODO: @#%d store label\n", st.token);
                 break;
             }
-            case IDENTIFIER: {
+            
+            default: {
                 // this is an instruction
                 // look at the instruction name and figure out what to do
                 char *mnem = id_token.cont;
@@ -356,10 +362,6 @@ Program parse(LexResult lexed) {
                 statements[statement_count++] = stmt;
                 break;
             }
-            default:
-                printf("unexpected token #%d after identifier\n", st.token);
-                prg.status = 1;
-                return prg;
             }
             break;
         }
