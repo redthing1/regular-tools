@@ -31,10 +31,16 @@ Program compile_pseudo(Program inp) {
 
         // process the statement
         switch (in_stmt.opcode) {
-        case OP_JMP:
+        case OP_JMP: {
+            // compile to mov reg to pc
+            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RPC, .a2 = in_stmt.a1, .a3 = 0};
+            populate_statement(&cmp1);
+            new_statements[new_statement_count++] = cmp1;
+            break;
+        }
         case OP_JMI: {
             // compile to setting pc
-            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RPC, .a2 = in_stmt.a1, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RPC, .a2 = in_stmt.a2, .a3 = in_stmt.a3};
             populate_statement(&cmp1);
             new_statements[new_statement_count++] = cmp1;
             break;
