@@ -5,19 +5,19 @@ provides lexer and parser for the assembler
 
 #pragma once
 
+#include "instr.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "instr.h"
 
 typedef enum {
     UNKNOWN = 0,
-    ALPHA = 1 << 0,   // abc
-    NUMERIC = 1 << 1, // 123
-    SPACE = 1 << 2,   // ' '
-    ARGSEP = 1 << 3,  // ','
-    MARK = 1 << 4,    // ':'
-    NUMSPECIAL = 1 << 5, // '$'
+    ALPHA = 1 << 0,            // abc
+    NUMERIC = 1 << 1,          // 123
+    SPACE = 1 << 2,            // ' '
+    ARGSEP = 1 << 3,           // ','
+    MARK = 1 << 4,             // ':'
+    NUMSPECIAL = 1 << 5,       // '$'
     DIRECTIVE_PREFIX = 1 << 6, // '#'
     ALPHANUMERIC = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
@@ -198,26 +198,26 @@ void free_lex_result(LexResult lexed) {
 typedef struct {
     Statement *statements;
     int statement_count;
+    int entry;
+    int status;
 } Program;
 
 typedef struct {
-    LexResult* lexed;
+    LexResult *lexed;
     int token; // token index
-    int cpos; // char position of reading
+    int cpos;  // char position of reading
 } ParserState;
 
-Token peek_token(ParserState* st) {
-    return st->lexed->tokens[st->token];
-}
+Token peek_token(ParserState *st) { return st->lexed->tokens[st->token]; }
 
-Token take_token(ParserState* st) {
+Token take_token(ParserState *st) {
     Token tok = peek_token(st);
     st->token++;
     st->cpos += strlen(tok.cont);
     return tok;
 }
 
-Token expect_token(ParserState* st, CharType type) {
+Token expect_token(ParserState *st, CharType type) {
     Token next = peek_token(st);
     CharType next_type = next.kind;
     if (next_type == type) {
@@ -226,7 +226,7 @@ Token expect_token(ParserState* st, CharType type) {
     } else {
         // expected token not found
         printf("unexpected token@%d: %s [%d]\n", st->cpos, next.cont, next.kind);
-        return (Token) {.cont = NULL, .kind = UNKNOWN};
+        return (Token){.cont = NULL, .kind = UNKNOWN};
     }
 }
 
@@ -235,10 +235,30 @@ Program parse(LexResult lexed) {
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(statements));
     int statement_count = 0;
+    Program prg = {.statements = statements, .status = 0};
 
     // TODO: parse the lex result into a list of instructions
+    while (st.token < lexed.token_count) {
+        Token next = peek_token(&st);
+        switch (next.kind) {
+        case DIRECTIVE: // handle directive
+            Token tok = take_token(&st);
+            // check if it is the "#entry" directive
+            if (strcmp(tok.cont, "#entry") == 0) {
+                // following label has the entry point
+                expect_token(&st, MARK);
+                Token lbl = expect_token(&st, ALPHANUMERIC);
+            }
+            break;
+        default:
+            printf("ERR: unexpected token #%d\n", st.token);
+            prg.status = 1;
+            return prg;
+        }
+    }
 
-    Program prg = {.statements = statements, statement_count = statement_count};
+    // update program information
+    prg.statement_count = statement_count;
     return prg;
 }
 

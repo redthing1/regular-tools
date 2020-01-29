@@ -36,8 +36,11 @@ int main(int argc, char **argv) {
     }
     // parse the tokens into a program
     Program prg = parse(lex_result);
+    if (prg.status == 0) { // successful program
+        // TODO: write out the program to binary
+        
+    }
 
-    // TODO: write out the program to binary
 
     // clean up
     free(inf_read.content);
