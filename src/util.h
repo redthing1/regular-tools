@@ -5,13 +5,13 @@ random utilities
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 
 typedef struct {
-    char* content;
+    char *content;
     size_t size;
 } FileReadResult;
 
@@ -25,16 +25,21 @@ FileReadResult util_read_file_contents(FILE *fp) {
     size_t size = ftell(fp);
     rewind(fp);
 
-     // allocate buffer with file size and nullterm
-    char* buffer = malloc((size + 1) * sizeof(*buffer));
+    // allocate buffer with file size and nullterm
+    char *buffer = malloc((size + 1) * sizeof(*buffer));
 
     fread(buffer, size, 1, fp); // read chunk to buffer
-    buffer[size] = '\0'; // add null terminator
+    buffer[size] = '\0';        // add null terminator
 
     FileReadResult res = {.content = buffer, .size = size};
     return res;
 }
 
-bool streq(char* s1, char* s2) {
-    return strcmp(s1, s2) == 0;
+bool streq(char *s1, char *s2) { return strcmp(s1, s2) == 0; }
+
+// https://stackoverflow.com/questions/21133701/is-there-any-function-in-the-c-language-which-can-convert_base-base-of-decimal-number/21134322#21134322
+int convert_dec_to(int val, int base) {
+    if (val == 0 || base == 10)
+        return val;
+    return (val % base) + 10 * convert_dec_to(val / base, base);
 }

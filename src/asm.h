@@ -248,8 +248,8 @@ uint32_t parse_numeric(ParserState *st) {
     uint32_t val = 0;
     switch (pfx) {
     case '$': {
-        // TODO: interpret as base-16
-        val = 0;
+        // interpret as base-16
+        val = (int)strtol(num_str, NULL, 16);
         break;
     }
     case '.': {
