@@ -40,6 +40,10 @@ void emu_exec(EmulatorState *emu_st, Statement instr) {
         // do nothing
         break;
     }
+    case OP_ADD: {
+        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] + emu_st->reg[instr.a3];
+        break;
+    }
     case OP_HLT: {
         emu_st->executing = false;
         break;
