@@ -10,14 +10,21 @@ typedef char OPCODE;
 typedef char ARG;
 
 typedef enum {
-    INSTR_INV, // invalid instruction
-    INSTR_OP,
-    INSTR_OP_I,
-    INSTR_OP_R,
-    INSTR_OP_R_I,
-    INSTR_OP_R_R,
-    INSTR_OP_R_R_I,
-    INSTR_OP_R_R_R,
+    INSTR_INV = 0, // invalid instruction
+    INSTR_OP = 1 << 0,
+    INSTR_K_0_0_0 = 1 << 1,
+    INSTR_K_I1 = 1 << 2,
+    INSTR_K_R1 = 1 << 3,
+    INSTR_K_I2 = 1 << 4,
+    INSTR_K_R2 = 1 << 5,
+    INSTR_K_I3 = 1 << 6,
+    INSTR_K_R3 = 1 << 7,
+    INSTR_OP_I = INSTR_OP | INSTR_K_I1,
+    INSTR_OP_R = INSTR_OP | INSTR_K_R1,
+    INSTR_OP_R_I = INSTR_OP | INSTR_K_R1 | INSTR_K_I2,
+    INSTR_OP_R_R = INSTR_OP | INSTR_K_R1 | INSTR_K_R2,
+    INSTR_OP_R_R_I = INSTR_OP | INSTR_K_R1 | INSTR_K_R2 | INSTR_K_I3,
+    INSTR_OP_R_R_R = INSTR_OP | INSTR_K_R1 | INSTR_K_R2 | INSTR_K_R3,
 } InstructionType;
 
 typedef struct {

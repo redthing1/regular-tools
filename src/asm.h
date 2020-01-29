@@ -242,9 +242,17 @@ Statement read_statement(ParserState *st, char *mnem) {
     stmt.opcode = instr_info.opcode; // set opcode
     // read the instruction data
     Token t1, t2, t3;
-    if (instr_info.type == INSTR_OP_R) {
+    if (instr_info.type & INSTR_K_R1 > 0) {
         t1 = expect_token(st, IDENTIFIER);
         stmt.a1 = get_register(t1.cont);
+    }
+    if (instr_info.type & INSTR_K_R2 > 0) {
+        t2 = expect_token(st, IDENTIFIER);
+        stmt.a2 = get_register(t2.cont);
+    }
+    if (instr_info.type & INSTR_K_R3 > 0) {
+        t3 = expect_token(st, IDENTIFIER);
+        stmt.a3 = get_register(t3.cont);
     }
     return stmt;
 }
