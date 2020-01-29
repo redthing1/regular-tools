@@ -498,12 +498,12 @@ void dump_statement(Statement st) {
     }
     if ((st.type & INSTR_K_I1) > 0) {
         uint32_t v = st.a1 | (st.a2 << 8) | (st.a3 << 16);
-        printf(" $%02x", v);
+        printf(" $%04x", v);
     } else if ((st.type & INSTR_K_I2) > 0) {
-        uint32_t v = st.a2 << 8 | (st.a3 << 8);
-        printf(" $%02x", v);
+        uint32_t v = st.a2 | (st.a3 << 8);
+        printf(" $%04x", v);
     } else if ((st.type & INSTR_K_I3) > 0) {
-        printf(" $%02x", st.a3);
+        printf(" $%04x", st.a3);
     }
     printf("\n");
 }
