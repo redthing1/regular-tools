@@ -336,6 +336,7 @@ Program parse(LexResult lexed) {
     Program prg = {.statements = statements, .status = 0};
     List labels;
     list_init(&labels);
+    char *entry_lbl = NULL;
 
     // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
@@ -354,11 +355,7 @@ Program parse(LexResult lexed) {
                 expect_token(&st, MARK);
                 Token lbl = expect_token(&st, IDENTIFIER);
                 // store entry label
-                Label *label = malloc(sizeof(label));
-                label->label = lbl.cont;
-                label->offset = st.offset;
-                list_push(&labels, label);
-                printf("TODO: T#%02d store entrypoint\n", st.token);
+                entry_lbl = lbl.cont;
             }
             break;
         }
@@ -422,6 +419,22 @@ Program parse(LexResult lexed) {
             prg.status = 1;
             return prg;
         }
+    }
+
+    // check for entry point label
+    if (entry_lbl) {
+        // find the matching label and replace with label offset
+        ListNode *n = labels.top;
+        int lb_offset = 0;
+        do {
+            Label *lb = (Label *)(n->data);
+            if (streq(lb->label, entry_lbl)) {
+                lb_offset = lb->offset;
+            }
+            n = n->link;
+        } while (n);
+        // set entrypoint to label offset
+        prg.entry = lb_offset;
     }
 
     // clean up labels

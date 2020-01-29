@@ -18,7 +18,7 @@ Program compile_pseudo(Program inp) {
     int statement_buf_size = 128;
     Statement *new_statements = malloc(statement_buf_size * sizeof(new_statements));
     int new_statement_count = 0;
-    Program prg = {.statements = new_statements, .status = 0};
+    Program prg = {.statements = new_statements, .status = 0, .entry = inp.entry};
     PseudoAssemblerState pas = {.pos = 0, .src = &inp};
 
     while (pas.pos < inp.statement_count) {
