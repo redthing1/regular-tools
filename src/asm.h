@@ -19,7 +19,7 @@ typedef enum {
     MARK = 1 << 4,             // ':'
     NUMSPECIAL = 1 << 5,       // '$'
     DIRECTIVE_PREFIX = 1 << 6, // '#'
-    ALPHANUMERIC = ALPHA | NUMERIC,
+    IDENTIFIER = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
     NUMERICCONSTANT = NUMERIC | NUMSPECIAL,
 } CharType;
@@ -135,8 +135,8 @@ LexResult lex(char *buf, size_t buf_sz) {
         CharType c_type = classify_char(c);
         switch (c_type) {
         case ALPHA: { // start of identifier
-            take_chars(&st, working, ALPHANUMERIC);
-            Token tok = {.kind = ALPHANUMERIC, .cont = working};
+            take_chars(&st, working, IDENTIFIER);
+            Token tok = {.kind = IDENTIFIER, .cont = working};
             tokens[token_count++] = tok;
             break;
         }
@@ -237,19 +237,25 @@ Program parse(LexResult lexed) {
     int statement_count = 0;
     Program prg = {.statements = statements, .status = 0};
 
-    // TODO: parse the lex result into a list of instructions
+    // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
         Token next = peek_token(&st);
         switch (next.kind) {
-        case DIRECTIVE: // handle directive
+        case DIRECTIVE: { // handle directive
             Token tok = take_token(&st);
             // check if it is the "#entry" directive
             if (strcmp(tok.cont, "#entry") == 0) {
                 // following label has the entry point
                 expect_token(&st, MARK);
-                Token lbl = expect_token(&st, ALPHANUMERIC);
+                Token lbl = expect_token(&st, IDENTIFIER);
+                // TODO: interpret the entry point label
             }
             break;
+        }
+        case IDENTIFIER: {
+            take_token(&st); // eat token
+            break;
+        }
         default:
             printf("ERR: unexpected token #%d\n", st.token);
             prg.status = 1;

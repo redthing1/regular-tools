@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < lex_result.token_count; i++) {
         Token tok = lex_result.tokens[i];
         // print token
-        printf("tok: %s [%d]\n", tok.cont, (int) tok.kind);
+        printf("%4d TOK: %10s [%3d]\n", i, tok.cont, (int) tok.kind);
     }
     // parse the tokens into a program
     Program prg = parse(lex_result);
