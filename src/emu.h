@@ -13,7 +13,7 @@ const size_t REGISTER_COUNT = 32;
 const size_t SIMPLE_REGISTER_COUNT = 8;
 
 typedef struct {
-    WORD *reg;
+    UWORD *reg;
     BYTE *mem;
     size_t mem_sz;
     bool executing;
@@ -23,9 +23,9 @@ EmulatorState *emu_init() {
     EmulatorState *emu_st = malloc(sizeof(EmulatorState));
     emu_st->mem_sz = MEMORY_SIZE;
 
-    size_t mem_alloc_sz = MEMORY_SIZE * sizeof(BYTE);
+    size_t mem_alloc_sz = MEMORY_SIZE * sizeof(emu_st->mem);
     emu_st->mem = malloc(mem_alloc_sz);
-    size_t reg_alloc_sz = REGISTER_COUNT * sizeof(WORD);
+    size_t reg_alloc_sz = REGISTER_COUNT * sizeof(emu_st->reg);
     emu_st->reg = malloc(reg_alloc_sz);
 
     // initialize all data
@@ -70,72 +70,98 @@ void emu_dump(EmulatorState *emu_st) {
 /**
  * Execute an instruction in the emulator
  */
-void emu_exec(EmulatorState *emu_st, Statement instr) {
-    switch (instr.opcode) {
+void emu_exec(EmulatorState *emu_st, Statement in) {
+    switch (in.opcode) {
     case OP_NOP: {
         // do nothing
         break;
     }
     case OP_ADD: {
-        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] + emu_st->reg[instr.a3];
+        emu_st->reg[in.a1] = emu_st->reg[in.a2] + emu_st->reg[in.a3];
         break;
     }
     case OP_SUB: {
-        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] - emu_st->reg[instr.a3];
+        emu_st->reg[in.a1] = emu_st->reg[in.a2] - emu_st->reg[in.a3];
         break;
     }
     case OP_AND: {
-        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] & emu_st->reg[instr.a3];
+        emu_st->reg[in.a1] = emu_st->reg[in.a2] & emu_st->reg[in.a3];
         break;
     }
     case OP_ORR: {
-        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] | emu_st->reg[instr.a3];
+        emu_st->reg[in.a1] = emu_st->reg[in.a2] | emu_st->reg[in.a3];
         break;
     }
     case OP_XOR: {
-        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] ^ emu_st->reg[instr.a3];
+        emu_st->reg[in.a1] = emu_st->reg[in.a2] ^ emu_st->reg[in.a3];
         break;
     }
     case OP_NOT: {
-        emu_st->reg[instr.a1] = ~emu_st->reg[instr.a2];
+        emu_st->reg[in.a1] = ~emu_st->reg[in.a2];
         break;
     }
     case OP_LSH: {
+        WORD shift = emu_st->reg[in.a3];
+        if (shift >= 0) {
+            emu_st->reg[in.a1] = emu_st->reg[in.a2] << shift;
+        } else {
+            emu_st->reg[in.a1] = emu_st->reg[in.a2] >> -shift;
+        }
         break;
     }
     case OP_ASH: {
+        WORD shift = emu_st->reg[in.a3];
+        if (shift >= 0) {
+            emu_st->reg[in.a1] = ((WORD)emu_st->reg[in.a2]) << shift;
+        } else {
+            emu_st->reg[in.a1] = ((WORD)emu_st->reg[in.a2]) >> -shift;
+        }
         break;
     }
     case OP_TCU: {
+        WORD sign = 0;
+        if (emu_st->reg[in.a2] > emu_st->reg[in.a3]) {
+            sign = 1;
+        } else if (emu_st->reg[in.a2] < emu_st->reg[in.a3]) {
+            sign = -1;
+        }
+        emu_st->reg[in.a1] = sign;
         break;
     }
     case OP_TCS: {
+        WORD sign = 0;
+        if (((WORD)emu_st->reg[in.a2]) > ((WORD)emu_st->reg[in.a3])) {
+            sign = 1;
+        } else if (((WORD)emu_st->reg[in.a2]) < ((WORD)emu_st->reg[in.a3])) {
+            sign = -1;
+        }
+        emu_st->reg[in.a1] = sign;
         break;
     }
     case OP_SET: {
-        emu_st->reg[instr.a1] = instr.a2 | (instr.a3 << 8);
+        emu_st->reg[in.a1] = in.a2 | (in.a3 << 8);
         break;
     }
     case OP_MOV: {
-        emu_st->reg[instr.a1] = emu_st->reg[instr.a2];
+        emu_st->reg[in.a1] = emu_st->reg[in.a2];
         break;
     }
     case OP_LDW: {
-        UWORD addr = emu_st->reg[instr.a2];
-        emu_st->reg[instr.a1] = emu_st->mem[addr + 0] << 0 | emu_st->mem[addr + 1] << 8 | emu_st->mem[addr + 2] << 16 |
-                                emu_st->mem[addr + 3] << 24;
+        UWORD addr = emu_st->reg[in.a2];
+        emu_st->reg[in.a1] = emu_st->mem[addr + 0] << 0 | emu_st->mem[addr + 1] << 8 | emu_st->mem[addr + 2] << 16 |
+                             emu_st->mem[addr + 3] << 24;
         break;
     }
     case OP_STW: {
-        UWORD addr = emu_st->reg[instr.a1];
-        emu_st->mem[addr + 0] = (emu_st->reg[instr.a2] >> 0) & 0xff;
-        emu_st->mem[addr + 1] = (emu_st->reg[instr.a2] >> 8) & 0xff;
-        emu_st->mem[addr + 2] = (emu_st->reg[instr.a2] >> 16) & 0xff;
-        emu_st->mem[addr + 3] = (emu_st->reg[instr.a2] >> 24) & 0xff;
+        UWORD addr = emu_st->reg[in.a1];
+        emu_st->mem[addr + 0] = (emu_st->reg[in.a2] >> 0) & 0xff;
+        emu_st->mem[addr + 1] = (emu_st->reg[in.a2] >> 8) & 0xff;
+        emu_st->mem[addr + 2] = (emu_st->reg[in.a2] >> 16) & 0xff;
+        emu_st->mem[addr + 3] = (emu_st->reg[in.a2] >> 24) & 0xff;
         break;
     }
     case OP_INT: {
-        printf("--INT: $%08x\n", emu_st->reg[instr.a1]);
+        printf("--INT: $%08x\n", emu_st->reg[in.a1]);
         break;
     }
     case OP_HLT: {

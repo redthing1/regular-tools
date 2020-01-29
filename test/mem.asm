@@ -3,8 +3,7 @@
 #entry :main
 
 test1:
-    set r1 $00ff
-    int r1
+    int r3
     hlt
 
 main:
