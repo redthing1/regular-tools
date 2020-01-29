@@ -382,6 +382,30 @@ void free_program(Program prg) {
 
 /* #endregion */
 
+/* #region Binary */
+
+void write_program(FILE *ouf, Program prg) {
+    char w = '\0';
+    // write header
+    // TODO: header format
+    // write code
+    for (int i = 0; i < prg.statement_count; i++) {
+        Statement st = prg.statements[i];
+        // write binary opcode
+        w = st.opcode;
+        fwrite(&w, 1, sizeof(w), ouf);
+        // write binary args
+        w = st.a1;
+        fwrite(&w, 1, sizeof(w), ouf);
+        w = st.a2;
+        fwrite(&w, 1, sizeof(w), ouf);
+        w = st.a3;
+        fwrite(&w, 1, sizeof(w), ouf);
+    }
+}
+
+/* #endregion */
+
 /* #region Debugging */
 void dump_program(Program prg) {
     for (int i = 0; i < prg.statement_count; i++) {

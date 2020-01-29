@@ -41,7 +41,8 @@ int main(int argc, char **argv) {
     if (prg.status == 0) { // successful program
         printf("== DUMP ==\n");
         dump_program(prg);
-        // TODO: write out the program to binary   
+        // write out the program to binary
+        write_program(ouf_fp, prg);
     }
 
     // clean up
