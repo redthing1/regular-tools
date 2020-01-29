@@ -5,9 +5,10 @@
 
 system instructions are extensions to the architecture specification and require hardware support.
 
-| Name  | Encoding | Description     |
-|-------|----------|-----------------|
-| `hlt` | 0x70     | Halt execution. |
+| Name  | Encoding | Description                     |
+|-------|----------|---------------------------------|
+| `hlt` | 0x70     | Halt execution.                 |
+| `int` | 0x71 rA  | Interrupt with the value in rA. |
 
 ## pseudo instructions
 
