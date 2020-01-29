@@ -60,8 +60,8 @@ Program decode_program(char *buf, size_t buf_sz) {
         return prg;
     }
 
-    while (st.pos < hd.code_size) {
-
+    size_t code_end = hd.decode_offset + hd.code_size;
+    while (st.pos < code_end) {
         ARG op = take_arg(&st);
         ARG a1 = take_arg(&st);
         ARG a2 = take_arg(&st);

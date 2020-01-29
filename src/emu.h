@@ -34,7 +34,9 @@ RGHeader emu_load(EmulatorState *emu_st, int offset, char *program, size_t progr
     // read RG header
     RGHeader hd = decode_header(program, program_sz);
     dump_header(hd);
-    memcpy(emu_st->mem + offset, program + hd.decode_offset, program_sz);
+    // offset the copy to start after the header
+    size_t copy_sz = program_sz - hd.decode_offset;
+    memcpy(emu_st->mem + offset, program + hd.decode_offset, copy_sz);
     return hd;
 }
 
