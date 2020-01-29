@@ -39,10 +39,14 @@ int main(int argc, char **argv) {
     printf("== PARSE ==\n");
     Program prg = parse(lex_result);
     if (prg.status == 0) { // successful program
-        // TODO: write out the program to binary
-        
+        printf("== DUMP ==\n");
+        // dump the program
+        for (int i = 0; i < prg.statement_count; i++) {
+            Statement st = prg.statements[i];
+            printf("OP: [%2x] %2x %2x %2x\n", st.opcode, st.a1, st.a2, st.a3);
+        }
+        // TODO: write out the program to binary   
     }
-
 
     // clean up
     free(inf_read.content);
