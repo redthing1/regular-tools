@@ -200,15 +200,23 @@ typedef struct {
 
 typedef struct {
     LexResult *lexed;
-    int token;  // token index
-    int cpos;   // char position of reading
-    int offset; // binary output position
+    int token;     // token index
+    int cpos;      // char position of reading
+    int offset;    // binary output position
+    List *labels; // label list
 } ParserState;
 
 typedef struct {
     char *label;
     int offset;
 } Label;
+
+void parser_state_cleanup(ParserState *st) {
+    // clean up labels
+    while (!list_empty(st->labels)) {
+        list_pop(st->labels); // pop off remaining labels
+    }
+}
 
 Token peek_token(ParserState *st) {
     if (st->token > st->lexed->token_count - 1) {
@@ -237,7 +245,48 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
+void parse_label_ref(ParserState *st, Token mark, char* prev) {
+    // check if it's a double tok
+    if (strlen(mark.cont) > 1) { // check if :: instead of :
+        // this is a label reference ("::label")
+        Token lbref = peek_token(st);
+        // find the matching label and replace with label offset
+        ListNode *n = st->labels->top;
+        uint16_t lb_offset = 0;
+        do {
+            Label *lb = (Label *)(n->data);
+            if (streq(lb->label, lbref.cont)) {
+                lb_offset = lb->offset;
+                break;
+            }
+            n = n->link;
+        } while (n);
+        // hotpatch the token (free first)
+        free(lbref.cont);
+        char *patch_cbuf = malloc(128);
+        patch_cbuf[0] = '\0';
+        sprintf(patch_cbuf, ".%d", lb_offset);
+        
+        st->lexed->tokens[st->token].cont = patch_cbuf;
+        st->lexed->tokens[st->token].kind = NUMERIC_CONSTANT;
+    } else {
+        // this is a label definition ("label:")
+        // store the label
+        // create and store a label
+        Label *label = malloc(sizeof(label));
+        label->label = prev;
+        label->offset = st->offset;
+        list_push(st->labels, label);
+    }
+}
+
 uint32_t parse_numeric(ParserState *st) {
+    // look at the next token (it could be a ref)
+    Token next_tok = peek_token(st);
+    if (next_tok.kind == MARK) {
+        Token mark = expect_token(st, MARK); // eat the mark
+        parse_label_ref(st, mark, NULL);
+    }
     // interpret numeric token
     Token num_tok = expect_token(st, NUMERIC_CONSTANT);
     char pfx = num_tok.cont[0];
@@ -327,6 +376,7 @@ Program parse(LexResult lexed) {
     int statement_count = 0;
     Program prg = {.statements = statements, .status = 0};
     List labels;
+    st.labels = &labels;
     list_init(&labels);
     char *entry_lbl = NULL;
 
@@ -357,38 +407,10 @@ Program parse(LexResult lexed) {
             bool instr = true;
             if (id_next.kind == MARK) {
                 Token mark = expect_token(&st, MARK); // eat the mark
-                // check if it's a double tok
-                if (strlen(mark.cont) > 1) { // check if :: instead of :
-                    // this is a label reference ("::label")
-                    Token lbref = peek_token(&st);
-                    // find the matching label and replace with label offset
-                    ListNode *n = labels.top;
-                    uint16_t lb_offset = 0;
-                    do {
-                        Label *lb = (Label *)(n->data);
-                        if (streq(lb->label, lbref.cont)) {
-                            lb_offset = lb->offset;
-                            break;
-                        }
-                        n = n->link;
-                    } while (n);
-                    // hotpatch the token (free first)
-                    free(lbref.cont);
-                    char *patch_cbuf = malloc(128);
-                    patch_cbuf[0] = '\0';
-                    sprintf(patch_cbuf, ".%d", lb_offset);
-                    lexed.tokens[st.token].cont = patch_cbuf;
-                    lexed.tokens[st.token].kind = NUMERIC_CONSTANT;
-                } else {
-                    // this is a label definition ("label:")
-                    // store the label
-                    // create and store a label
-                    Label *label = malloc(sizeof(label));
-                    label->label = id_token.cont;
-                    label->offset = st.offset;
-                    list_push(&labels, label);
+                if (strlen(mark.cont) == 1) {         // if single :, then label def
                     instr = false;
                 }
+                parse_label_ref(&st, mark, id_token.cont);
             }
             if (instr) {
                 // this is an instruction
@@ -405,6 +427,7 @@ Program parse(LexResult lexed) {
         default:
             printf("ERR: unexpected token #%d\n", st.token);
             prg.status = 1;
+            parser_state_cleanup(&st);
             return prg;
         }
     }
@@ -426,10 +449,7 @@ Program parse(LexResult lexed) {
         prg.entry = lb_offset;
     }
 
-    // clean up labels
-    while (!list_empty(&labels)) {
-        list_pop(&labels); // pop off remaining labels
-    }
+    parser_state_cleanup(&st);
 
     // update program information
     prg.statement_count = statement_count;
