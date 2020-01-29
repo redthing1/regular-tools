@@ -7,6 +7,8 @@ provides instruction declarations
 #include "util.h"
 #include <stdint.h>
 
+#define INSTR_SIZE 4
+
 typedef uint8_t BYTE;
 typedef BYTE ARG;
 typedef ARG OPCODE;

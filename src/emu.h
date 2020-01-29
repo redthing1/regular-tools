@@ -60,7 +60,7 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         ARG d1 = emu_st->mem[emu_st->reg[0] + 1];
         ARG d2 = emu_st->mem[emu_st->reg[0] + 2];
         ARG d3 = emu_st->mem[emu_st->reg[0] + 3];
-        emu_st->reg[0] += 4; // advance PC
+        emu_st->reg[0] += INSTR_SIZE; // advance PC
         Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3 };
         populate_statement(&stmt); // interpret instruction type
         dump_statement(stmt);

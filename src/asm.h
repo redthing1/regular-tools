@@ -204,7 +204,7 @@ void free_lex_result(LexResult lexed) {
 typedef struct {
     Statement *statements;
     int statement_count;
-    int entry;
+    uint16_t entry;
     int status;
 } Program;
 
@@ -368,11 +368,10 @@ Program parse(LexResult lexed) {
                 // check if it's a double tok
                 if (strlen(mark.cont) > 1) { // check if :: instead of :
                     // this is a label reference ("::label")
-                    printf("TODO: T#%02d label ref\n", st.token);
                     Token lbref = peek_token(&st);
                     // find the matching label and replace with label offset
                     ListNode *n = labels.top;
-                    int lb_offset = 0;
+                    uint16_t lb_offset = 0;
                     do {
                         Label *lb = (Label *)(n->data);
                         if (streq(lb->label, lbref.cont)) {
@@ -390,7 +389,6 @@ Program parse(LexResult lexed) {
                 } else {
                     // this is a label definition ("label:")
                     // store the label
-                    printf("TODO: T#%02d store label\n", st.token);
                     // create and store a label
                     Label *label = malloc(sizeof(label));
                     label->label = id_token.cont;
@@ -407,7 +405,7 @@ Program parse(LexResult lexed) {
                 // dump instruction info
                 statements[statement_count++] = stmt;
                 // update offset
-                st.offset += sizeof(ARG) * 4;
+                st.offset += sizeof(ARG) * INSTR_SIZE;
             }
             break;
         }
@@ -422,7 +420,7 @@ Program parse(LexResult lexed) {
     if (entry_lbl) {
         // find the matching label and replace with label offset
         ListNode *n = labels.top;
-        int lb_offset = 0;
+        uint16_t lb_offset = 0;
         do {
             Label *lb = (Label *)(n->data);
             if (streq(lb->label, entry_lbl)) {
@@ -457,8 +455,10 @@ void write_program(FILE *ouf, Program prg) {
     char w = '\0';
     // write header
     const char *REG = "reg";
-    fwrite(&REG, sizeof(REG), 3, ouf);             // magic
+    fwrite(&REG, sizeof(REG), 4, ouf);             // magic
     fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
+    uint16_t code_size = prg.statement_count * INSTR_SIZE;
+    fwrite(&code_size, sizeof(code_size), 1, ouf); // code size
 
     // write code
     for (int i = 0; i < prg.statement_count; i++) {
