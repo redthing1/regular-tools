@@ -76,6 +76,10 @@ typedef struct {
 // opcodes - _ad/pseudo
 #define OP_JMP 0xa0
 #define OP_JMI 0xa1
+#define OP_PSH 0xa2
+#define OP_POP 0xa3
+#define OP_CAL 0xa4
+#define OP_RET 0xa5
 #define OP_SWP 0xb0
 
 // registers
@@ -160,6 +164,10 @@ InstructionInfo get_instruction_info(char *mnem) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R, .opcode = OP_JMP};
     } else if (streq(mnem, "jmi")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_I, .opcode = OP_JMI};
+    } else if (streq(mnem, "psh")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R, .opcode = OP_PSH};
+    } else if (streq(mnem, "pop")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R, .opcode = OP_POP};
     } else if (streq(mnem, "swp")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
     } else {

@@ -29,17 +29,17 @@ Program compile_pseudo(Program inp) {
             printf("ERROR: out of statement space\n");
             return prg;
         }
-        Statement in_stmt = take_statement(&pas);
+        Statement in = take_statement(&pas);
 
         // process the statement
-        switch (in_stmt.opcode) {
+        switch (in.opcode) {
         case OP_JMP: {
             // jmp rA
             // compile to mov reg to pc
             /*
                 mov pc rA
             */
-            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RPC, .a2 = in_stmt.a1, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RPC, .a2 = in.a1, .a3 = 0};
             populate_statement(&cmp1);
             new_statements[new_statement_count++] = cmp1;
             break;
@@ -50,7 +50,7 @@ Program compile_pseudo(Program inp) {
             /*
                 set pc imm
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RPC, .a2 = in_stmt.a2, .a3 = in_stmt.a3};
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RPC, .a2 = in.a2, .a3 = in.a3};
             populate_statement(&cmp1);
             new_statements[new_statement_count++] = cmp1;
             break;
@@ -63,9 +63,9 @@ Program compile_pseudo(Program inp) {
                 mov rA rB
                 mov rB at
             */
-            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RAT, .a2 = in_stmt.a1, .a3 = 0};
-            Statement cmp2 = {.opcode = OP_MOV, .a1 = in_stmt.a1, .a2 = in_stmt.a2, .a3 = 0};
-            Statement cmp3 = {.opcode = OP_MOV, .a1 = in_stmt.a2, .a2 = REG_RAT, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RAT, .a2 = in.a1, .a3 = 0};
+            Statement cmp2 = {.opcode = OP_MOV, .a1 = in.a1, .a2 = in.a2, .a3 = 0};
+            Statement cmp3 = {.opcode = OP_MOV, .a1 = in.a2, .a2 = REG_RAT, .a3 = 0};
             populate_statement(&cmp1);
             populate_statement(&cmp2);
             populate_statement(&cmp3);
@@ -74,10 +74,39 @@ Program compile_pseudo(Program inp) {
             new_statements[new_statement_count++] = cmp3;
             break;
         }
-
+        case OP_PSH: {
+            // psh rA
+            // compile to lower sp and then save
+            /*
+                sub sp sp 4
+                stw sp rA
+            */
+            Statement cmp1 = {.opcode = OP_SUB, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = sizeof(UWORD)};
+            Statement cmp2 = {.opcode = OP_STW, .a1 = REG_RSP, .a2 = in.a1, .a3 = 0};
+            populate_statement(&cmp1);
+            populate_statement(&cmp2);
+            new_statements[new_statement_count++] = cmp1;
+            new_statements[new_statement_count++] = cmp2;
+            break;
+        }
+        case OP_POP: {
+            // pop rA
+            // compile to load value and then raise sp
+            /*
+                ldw rA sp
+                add sp sp 4
+            */
+            Statement cmp1 = {.opcode = OP_LDW, .a1 = in.a1, .a2 = REG_RSP, .a3 = REG_RSP};
+            Statement cmp2 = {.opcode = OP_ADD, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = sizeof(UWORD)};
+            populate_statement(&cmp1);
+            populate_statement(&cmp2);
+            new_statements[new_statement_count++] = cmp1;
+            new_statements[new_statement_count++] = cmp2;
+            break;
+        }
         default:
             // copy instruction
-            new_statements[new_statement_count++] = in_stmt; // advance counter
+            new_statements[new_statement_count++] = in; // advance counter
             break;
         }
     }
