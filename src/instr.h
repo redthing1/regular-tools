@@ -66,6 +66,7 @@ typedef struct {
 
 // opcodes - _ad/pseudo
 #define OP_JMP 0xa0
+#define OP_JMI 0xa1
 
 // registers
 #define REG_RXX 0x01
@@ -143,6 +144,8 @@ InstructionInfo get_instruction_info(char *mnem) {
         return (InstructionInfo){.type = INSTR_OP, .opcode = OP_HLT};
     } else if (streq(mnem, "jmp")) {
         return (InstructionInfo){.type = INSTR_OP_R, .opcode = OP_JMP};
+    } else if (streq(mnem, "jmi")) {
+        return (InstructionInfo){.type = INSTR_OP_I, .opcode = OP_JMI};
     } else {
         // unrecognized mnem
         return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};

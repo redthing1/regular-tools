@@ -388,8 +388,11 @@ Program parse(LexResult lexed) {
                     char *patch_cbuf = malloc(128);
                     patch_cbuf[0] = '\0';
                     sprintf(patch_cbuf, ".%d", lb_offset);
-                    Token patch_tok = {.cont = patch_cbuf, .kind = NUMERIC};
-                    lexed.tokens[st.cpos] = patch_tok;
+                    lexed.tokens[st.token].cont = patch_cbuf;
+                    lexed.tokens[st.token].kind = NUMERIC_CONSTANT;
+                    // check patched
+                    Token check_patch = peek_token(&st);
+                    bool valid = check_patch.kind == NUMERIC_CONSTANT;
                 } else {
                     // this is a label definition ("label:")
                     // store the label
