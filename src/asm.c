@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] assembler\n");
-    if (argc < 2) {
+    if (argc < 3) {
         printf("usage: asm --opts <in> <out>\n");
     }
     char *in_file = argv[1];
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     free(inf_read.content);
     free_lex_result(lex_result);
     free_program(prg);
-    
+
     fclose(ouf_fp); // close output file
 
     return 0;
