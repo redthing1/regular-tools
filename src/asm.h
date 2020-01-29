@@ -214,7 +214,7 @@ typedef struct {
 } ParserState;
 
 Token peek_token(ParserState *st) { 
-    if (st->cpos > st->lexed->token_count - 1) {
+    if (st->token > st->lexed->token_count - 1) {
         return (Token) {.kind = UNKNOWN};
     }
     return st->lexed->tokens[st->token];
