@@ -3,77 +3,78 @@ ds.h
 basic data structures
 */
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-typedef struct ItemNode {
-    void* data;
-    struct ItemNode* link;
-} ItemNode;
+/* #region List and Stack */
+
+typedef struct ListNode {
+    void *data;
+    struct ListNode *link;
+} ListNode;
 
 typedef struct {
-    struct ItemNode* top;
-} ItemList;
+    struct ListNode *top;
+} List;
 
-bool list_empty(ItemList *s) {
-    return s->top == NULL;
-}
+void list_init(List *l) { l->top = NULL; }
 
-void* list_peek(ItemList *s) {
-    return s->top->data;
-}
+bool list_empty(List *l) { return l->top == NULL; }
 
-void list_dump(ItemList *s) {
-    ItemNode* n = s->top;
-    printf("dmp: ");
-    while (n) {
-        printf("%s ", n->data);
-        n = n->link;
-        if (!n) break;
-    }
-    printf("\n");
-}
+void *list_peek(List *l) { return l->top->data; }
 
-void stack_push(ItemList* s, void* d) {
+// void list_dump(List *l) {
+//     ListNode *n = l->top;
+//     printf("dmp: ");
+//     while (n) {
+//         printf("%s ", n->data);
+//         n = n->link;
+//         if (!n)
+//             break;
+//     }
+//     printf("\n");
+// }
+
+void stack_push(List *l, void *d) {
     // alloc a new node to hold 'c'
-    ItemNode* node;
+    ListNode *node;
     node = malloc(sizeof(node));
     node->data = d;
     // there is no top node, make a new one
-    if (!s->top) {
+    if (!l->top) {
         node->link = NULL;
-        s->top = node;
+        l->top = node;
     } else {
         // get the top node
-        ItemNode* p = s->top;
-        s->top = node;
+        ListNode *p = l->top;
+        l->top = node;
         node->link = p;
     }
 }
 
-void* stack_pop(ItemList* s) {
+void *stack_pop(List *l) {
     // get the tio node
-    ItemNode* p = s->top;
+    ListNode *p = l->top;
     // set top to element below
-    s->top = p->link;
-    void* ch = p->data;
+    l->top = p->link;
+    void *ch = p->data;
     free(p);
     return ch;
 }
 
-void queue_push(ItemList *q, void* d) {
+void list_push(List *l, void *d) {
     // alloc a new node to hold 'c'
-    ItemNode* node;
+    ListNode *node;
     node = malloc(sizeof(node));
     node->data = d;
     // check top node
-    if (!q->top) {
+    if (!l->top) {
         node->link = NULL;
-        q->top = node;
+        l->top = node;
     } else {
         // get the last node
-        ItemNode* n = q->top;
+        ListNode *n = l->top;
         while (n->link) {
             n = n->link;
         }
@@ -82,11 +83,28 @@ void queue_push(ItemList *q, void* d) {
     }
 }
 
-void* queue_pop(ItemList *q) {
+void *list_pop(List *l) {
     // pop first node and set top to next
-    ItemNode* node = q->top;
-    q->top = node->link; // move top pointer
-    void* ch = node->data;
+    ListNode *node = l->top;
+    l->top = node->link; // move top pointer
+    void *d = node->data;
     free(node);
-    return ch;
+    return d;
 }
+
+int list_indexof(List *l, void* item) {
+    ListNode *n = l->top;
+    int i = 0;
+    do {
+        if (n->data == item) return i;
+        n = n->link;
+        i++;
+    } while (n);
+    return -1;
+}
+
+/* #endregion */
+
+/* #region Hashtable */
+// TODO: damn it
+/* #endregion */
