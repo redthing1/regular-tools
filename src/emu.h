@@ -13,7 +13,7 @@ const size_t REGISTER_COUNT = 32;
 const size_t SIMPLE_REGISTER_COUNT = 8;
 
 typedef struct {
-    ARG *reg;
+    WORD *reg;
     BYTE *mem;
     size_t mem_sz;
     bool executing;
@@ -25,7 +25,7 @@ EmulatorState *emu_init() {
 
     size_t mem_alloc_sz = MEMORY_SIZE * sizeof(BYTE);
     emu_st->mem = malloc(mem_alloc_sz);
-    size_t reg_alloc_sz = REGISTER_COUNT * sizeof(ARG);
+    size_t reg_alloc_sz = REGISTER_COUNT * sizeof(WORD);
     emu_st->reg = malloc(reg_alloc_sz);
 
     // initialize all data
@@ -50,7 +50,7 @@ RGHeader emu_load(EmulatorState *emu_st, int offset, char *program, size_t progr
 
 void dump_rg(EmulatorState *emu_st, ARG rg) {
     const char *reg_name = get_register_name(rg);
-    printf("%5s: $%04x\n", reg_name, emu_st->reg[rg]);
+    printf("%5s: $%08x\n", reg_name, emu_st->reg[rg]);
 }
 
 /**

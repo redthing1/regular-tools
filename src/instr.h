@@ -9,9 +9,11 @@ provides instruction declarations
 
 #define INSTR_SIZE 4
 
-typedef uint8_t BYTE;
-typedef BYTE ARG;
-typedef ARG OPCODE;
+typedef uint8_t BYTE;  // byte size
+typedef uint32_t WORD; // word size
+
+typedef BYTE ARG;   // args are one byte
+typedef ARG OPCODE; // opcodes are one arg
 
 typedef enum {
     INSTR_INV = 0, // invalid instruction
