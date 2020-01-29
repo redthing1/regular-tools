@@ -32,6 +32,9 @@ EmulatorState *emu_init() {
     memset(emu_st->mem, 0, mem_alloc_sz);
     memset(emu_st->reg, 0, reg_alloc_sz);
 
+    // set RSP to mem_sz - 1
+    emu_st->reg[REG_RSP] = emu_st->mem_sz - 1;
+
     return emu_st;
 }
 

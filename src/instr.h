@@ -165,9 +165,9 @@ InstructionInfo get_instruction_info(char *mnem) {
     } else if (streq(mnem, "jmi")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_I, .opcode = OP_JMI};
     } else if (streq(mnem, "psh")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R, .opcode = OP_PSH};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R, .opcode = OP_PSH};
     } else if (streq(mnem, "pop")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R, .opcode = OP_POP};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R, .opcode = OP_POP};
     } else if (streq(mnem, "swp")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
     } else {

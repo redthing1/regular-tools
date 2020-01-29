@@ -78,30 +78,38 @@ Program compile_pseudo(Program inp) {
             // psh rA
             // compile to lower sp and then save
             /*
-                sub sp sp 4
+                set at 4
+                sub sp sp at
                 stw sp rA
             */
-            Statement cmp1 = {.opcode = OP_SUB, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = sizeof(UWORD)};
-            Statement cmp2 = {.opcode = OP_STW, .a1 = REG_RSP, .a2 = in.a1, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD), .a3 = 0};
+            Statement cmp2 = {.opcode = OP_SUB, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = REG_RAT};
+            Statement cmp3 = {.opcode = OP_STW, .a1 = REG_RSP, .a2 = in.a1, .a3 = 0};
             populate_statement(&cmp1);
             populate_statement(&cmp2);
+            populate_statement(&cmp3);
             new_statements[new_statement_count++] = cmp1;
             new_statements[new_statement_count++] = cmp2;
+            new_statements[new_statement_count++] = cmp3;
             break;
         }
         case OP_POP: {
             // pop rA
             // compile to load value and then raise sp
             /*
+                set at 4
                 ldw rA sp
-                add sp sp 4
+                add sp sp at
             */
-            Statement cmp1 = {.opcode = OP_LDW, .a1 = in.a1, .a2 = REG_RSP, .a3 = REG_RSP};
-            Statement cmp2 = {.opcode = OP_ADD, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = sizeof(UWORD)};
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD), .a3 = 0};
+            Statement cmp2 = {.opcode = OP_LDW, .a1 = in.a1, .a2 = REG_RSP, .a3 = REG_RSP};
+            Statement cmp3 = {.opcode = OP_ADD, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = REG_RAT};
             populate_statement(&cmp1);
             populate_statement(&cmp2);
+            populate_statement(&cmp3);
             new_statements[new_statement_count++] = cmp1;
             new_statements[new_statement_count++] = cmp2;
+            new_statements[new_statement_count++] = cmp3;
             break;
         }
         default:
