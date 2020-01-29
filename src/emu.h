@@ -135,7 +135,7 @@ void emu_exec(EmulatorState *emu_st, Statement instr) {
         break;
     }
     case OP_INT: {
-        printf("INT: $%08x", emu_st->reg[instr.a1]);
+        printf("--INT: $%08x\n", emu_st->reg[instr.a1]);
         break;
     }
     case OP_HLT: {
