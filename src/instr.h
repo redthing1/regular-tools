@@ -4,10 +4,11 @@ provides instruction declarations
 */
 
 #pragma once
+#include <stdint.h>
 #include "util.h"
 
-typedef char OPCODE;
-typedef char ARG;
+typedef uint8_t OPCODE;
+typedef uint8_t ARG;
 
 typedef enum {
     INSTR_INV = 0, // invalid instruction

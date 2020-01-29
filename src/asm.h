@@ -54,7 +54,7 @@ CharType classify_char(char c) {
     case '#':
         return DIRECTIVE_PREFIX;
     case '$':
-    case '^':
+    case '.':
         return NUM_SPECIAL;
     case ' ':
     case '\t':
@@ -232,7 +232,31 @@ Token expect_token(ParserState *st, CharType type) {
 }
 
 uint32_t parse_numeric(ParserState *st) {
-    // TODO: read token and interpret numeric value
+    // interpret numeric token
+    Token num_tok = expect_token(st, NUMERIC_CONSTANT);
+    char pfx = num_tok.cont[0];
+    // create a new string without the prefix
+    int num_len = strlen(num_tok.cont) - 1;
+    char *num_str = malloc(num_len + 1);
+    strncpy(num_str, num_tok.cont + 1, num_len);
+    num_str[num_len] = '\0';
+    // convert base
+    uint32_t val = 0;
+    switch (pfx) {
+    case '$': {
+        // TODO: interpret as base-16
+        return 0;
+    }
+    case '.': {
+        // interpret as base-10
+        val = atoi(num_str);
+    }
+    default:
+        // invalid numeric
+        printf("ERR: invalid numeric prefix %s", pfx);
+    }
+    free(num_str); // free numstr
+    return val;
 }
 
 Statement read_statement(ParserState *st, char *mnem) {
