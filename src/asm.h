@@ -143,48 +143,33 @@ LexResult lex(char *buf, size_t buf_sz) {
         working = malloc(128);
         working[0] = '\0';
         CharType c_type = classify_char(c);
-        switch (c_type) {
-        case ALPHA: { // start of identifier
+        if ((c_type & ALPHA) > 0) { // start of identifier
             take_chars(&st, working, IDENTIFIER);
             Token tok = {.kind = IDENTIFIER, .cont = working};
             tokens[token_count++] = tok;
-            break;
-        }
-        case NUMERIC: { // start of num literal
+        } else if ((c_type & NUMERIC) > 0) { // start of num literal
             take_chars(&st, working, NUMERIC);
             Token tok = {.kind = NUMERIC, .cont = working};
             tokens[token_count++] = tok;
-            break;
-        }
-        case ARGSEP: {
+        } else if ((c_type & ARGSEP) > 0) {
             take_chars(&st, working, ARGSEP);
             Token tok = {.kind = ARGSEP, .cont = working};
             tokens[token_count++] = tok;
-            break;
-        }
-        case MARK: {
+        } else if ((c_type & MARK) > 0) {
             take_chars(&st, working, MARK);
             Token tok = {.kind = MARK, .cont = working};
             tokens[token_count++] = tok;
-            break;
-        }
-        case NUM_SPECIAL: {
+        } else if ((c_type & NUM_SPECIAL) > 0) {
             take_chars(&st, working, NUMERIC_CONSTANT);
             Token tok = {.kind = NUMERIC_CONSTANT, .cont = working};
             tokens[token_count++] = tok;
-            break;
-        }
-        case DIRECTIVE_PREFIX: {
+        } else if ((c_type & DIRECTIVE_PREFIX) > 0) {
             take_chars(&st, working, DIRECTIVE);
             Token tok = {.kind = DIRECTIVE, .cont = working};
             tokens[token_count++] = tok;
-            break;
-        }
-        default: {
+        } else {
             fprintf(stderr, "unrecognized character: %c, [%d:%d]\n", c, st.line, (int)(st.pos - st.line_start) + 1);
             take_char(&st); // eat the character
-            break;
-        }
         }
     }
     LexResult res;
