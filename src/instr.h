@@ -8,10 +8,29 @@ provides instruction declarations
 typedef char OPCODE;
 typedef char ARG;
 
+typedef enum {
+    INSTR_INV, // invalid instruction
+    INSTR_OP,
+    INSTR_OP_I,
+    INSTR_OP_R,
+    INSTR_OP_R_I,
+    INSTR_OP_R_R,
+    INSTR_OP_R_R_I,
+    INSTR_OP_R_R_R,
+} InstructionType;
+
 typedef struct {
     OPCODE opcode;
     ARG a1, a2, a3;
+    InstructionType type;
 } Statement;
+
+typedef struct {
+    InstructionType type;
+    OPCODE opcode;
+} InstructionInfo;
+
+/* #region OPCODE and REG definitions */
 
 // opcodes
 #define OP_NOP 0x00
@@ -65,3 +84,20 @@ typedef struct {
 #define REG_R29 0x8d
 #define REG_RSP 0x8e
 #define REG_RAT 0x8f
+
+/* #endregion */
+
+InstructionInfo get_instruction_info(char *mnemonic) {
+    if (strcmp(mnemonic, "nop")) {
+        return (InstructionInfo){.type = INSTR_OP, .opcode = OP_NOP};
+    } else if (strcmp(mnemonic, "add")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_ADD};
+    } else if (strcmp(mnemonic, "sub")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_SUB};
+    } else if (strcmp(mnemonic, "and")) {
+        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_AND};
+    } else {
+        // unrecognized mnemonic
+        return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};
+    }
+}

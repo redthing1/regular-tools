@@ -230,6 +230,20 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
+Statement read_statement(char *mnem) {
+    InstructionInfo instr_info = get_instruction_info(mnem);
+    Statement stmt = {.opcode = 0, .a1 = 0, .a2 = 0, .a3 = 0, .type = instr_info.type};
+    if (instr_info.type == INSTR_INV) {
+        // invalid mnemonic
+        printf("unrecognized mnemonic: %s\n", mnem);
+        return stmt; // an invalid instruction statement
+    }
+    
+    stmt.opcode = instr_info.opcode; // set opcode
+    // read the instruction data
+    return stmt;
+}
+
 Program parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0};
     int statement_buf_size = 128;
@@ -249,11 +263,35 @@ Program parse(LexResult lexed) {
                 expect_token(&st, MARK);
                 Token lbl = expect_token(&st, IDENTIFIER);
                 // TODO: interpret the entry point label
+                printf("TODO: @#%d store entrypoint\n", st.token);
             }
             break;
         }
         case IDENTIFIER: {
-            take_token(&st); // eat token
+            Token id_token = take_token(&st);
+            Token id_next = peek_token(&st);
+            switch (id_next.kind) {
+            case MARK: {
+                // this is a label definition ("label:")
+                take_token(&st); // eat the mark
+                // TODO: store the label
+                printf("TODO: @#%d store label\n", st.token);
+                break;
+            }
+            case IDENTIFIER: {
+                // this is an instruction
+                // look at the instruction name and figure out what to do
+                char *mnem = id_token.cont;
+                Statement stmt = read_statement(mnem);
+                // dump instruction info
+
+                break;
+            }
+            default:
+                printf("unexpected token #%d after identifier\n", st.token);
+                prg.status = 1;
+                return prg;
+            }
             break;
         }
         default:
