@@ -18,14 +18,14 @@ ARG take_arg(DecoderState *st) { return st->buf[st->pos++]; }
 
 Program decode_program(char *buf, size_t buf_sz) {
     // read header
-    bool valid_magic = (buf[0] == 'r') && (buf[1] == 'e') && (buf[2] == 'g');
+    bool valid_magic = (buf[0] == 'r') && (buf[1] == 'g');
     uint16_t entry;
     uint16_t code_size;
     size_t dec_offset = 0;
     if (valid_magic) {
-        entry = (buf[6] << 8) | buf[7];
-        code_size = (buf[8] << 8) | buf[9];
-        dec_offset = 10; // start after header
+        entry = buf[2] | (buf[3] << 8);
+        code_size = buf[4] | (buf[5] << 8);
+        dec_offset = 6; // start after header
     } else {
         printf("WARN: magic header not matched. falling back to compat.\n");
         // set default values
@@ -52,7 +52,7 @@ Program decode_program(char *buf, size_t buf_sz) {
         ARG a1 = take_arg(&st);
         ARG a2 = take_arg(&st);
         ARG a3 = take_arg(&st);
-        
+
         // interpret instruction
         Statement stmt = {.opcode = op, .a1 = a1, .a2 = a2, .a3 = a3};
         populate_statement(&stmt);
