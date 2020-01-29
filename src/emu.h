@@ -115,11 +115,11 @@ void emu_exec(EmulatorState *emu_st, Statement instr) {
         break;
     }
     case OP_STW: {
-        UWORD addr = emu_st->reg[instr.a2];
-        emu_st->mem[addr + 0] = (emu_st->reg[instr.a1] >> 0) & 0xff;
-        emu_st->mem[addr + 1] = (emu_st->reg[instr.a1] >> 8) & 0xff;
-        emu_st->mem[addr + 2] = (emu_st->reg[instr.a1] >> 16) & 0xff;
-        emu_st->mem[addr + 3] = (emu_st->reg[instr.a1] >> 24) & 0xff;
+        UWORD addr = emu_st->reg[instr.a1];
+        emu_st->mem[addr + 0] = (emu_st->reg[instr.a2] >> 0) & 0xff;
+        emu_st->mem[addr + 1] = (emu_st->reg[instr.a2] >> 8) & 0xff;
+        emu_st->mem[addr + 2] = (emu_st->reg[instr.a2] >> 16) & 0xff;
+        emu_st->mem[addr + 3] = (emu_st->reg[instr.a2] >> 24) & 0xff;
         break;
     }
     case OP_HLT: {
