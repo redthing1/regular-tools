@@ -238,7 +238,7 @@ Statement read_statement(ParserState *st, char *mnem) {
         printf("unrecognized mnemonic: %s\n", mnem);
         return stmt; // an invalid instruction statement
     }
-    
+
     stmt.opcode = instr_info.opcode; // set opcode
     // read the instruction data
     Token t1, t2, t3;
@@ -258,12 +258,17 @@ Program parse(LexResult lexed) {
 
     // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
+        // TODO: check to reallocate statements
+        if (statement_count > statement_buf_size - 1) {
+            printf("ERROR: out of statement space\n");
+            return prg;
+        }
         Token next = peek_token(&st);
         switch (next.kind) {
         case DIRECTIVE: { // handle directive
             Token tok = take_token(&st);
             // check if it is the "#entry" directive
-            if (strcmp(tok.cont, "#entry") == 0) {
+            if (streq(tok.cont, "#entry")) {
                 // following label has the entry point
                 expect_token(&st, MARK);
                 Token lbl = expect_token(&st, IDENTIFIER);
@@ -289,7 +294,7 @@ Program parse(LexResult lexed) {
                 char *mnem = id_token.cont;
                 Statement stmt = read_statement(&st, mnem);
                 // dump instruction info
-
+                statements[statement_count++] = stmt;
                 break;
             }
             default:

@@ -110,4 +110,6 @@ ARG get_register(char *mnem) {
     } else if (streq(mnem, "r1")) {
         return REG_R01;
     }
+    // unrecognized mnem
+    return REG_RXX;
 }
