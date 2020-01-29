@@ -81,7 +81,23 @@ void emu_exec(EmulatorState *emu_st, Statement instr) {
         break;
     }
     case OP_SUB: {
-        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] + emu_st->reg[instr.a3];
+        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] - emu_st->reg[instr.a3];
+        break;
+    }
+    case OP_AND: {
+        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] & emu_st->reg[instr.a3];
+        break;
+    }
+    case OP_ORR: {
+        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] | emu_st->reg[instr.a3];
+        break;
+    }
+    case OP_XOR: {
+        emu_st->reg[instr.a1] = emu_st->reg[instr.a2] ^ emu_st->reg[instr.a3];
+        break;
+    }
+    case OP_NOT: {
+        emu_st->reg[instr.a1] = ~emu_st->reg[instr.a2];
         break;
     }
     case OP_SET: {

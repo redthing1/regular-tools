@@ -6,7 +6,12 @@ test1:
     hlt
 
 main:
-    set r1 .10
+    set r1 .20
     set r2 .10
-    add r1 r1 r2
+    
+    ; addition
+    add r1 r1 r2 ; r1 = .30
+    ; subtraction
+    sub r2 r1 r2 ; r2 = .20
+
     jmi ::test1
