@@ -121,7 +121,7 @@ InstructionInfo get_instruction_info(char *mnem) {
     } else if (streq(mnem, "tcs")) {
         return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_TCS};
     } else if (streq(mnem, "set")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_I, .opcode = OP_SET};
+        return (InstructionInfo){.type = INSTR_OP_R_I, .opcode = OP_SET};
     } else if (streq(mnem, "mov")) {
         return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_MOV};
     } else if (streq(mnem, "ldw")) {

@@ -101,13 +101,13 @@ void take_chars_until(LexerState *st, char *working, CharType stopType) {
 }
 
 void skip_chars(LexerState *st, CharType skip) {
-    while (((int)peek_chartype(st) & (int)skip) > 0) {
+    while (st->pos < st->size && ((int)peek_chartype(st) & (int)skip) > 0) {
         take_char(st);
     }
 }
 
 void skip_until(LexerState *st, char until) {
-    while (peek_char(st) != until) {
+    while (st->pos < st->size && peek_char(st) != until) {
         take_char(st);
     }
 }
@@ -124,10 +124,13 @@ LexResult lex(char *buf, size_t buf_sz) {
             token_buf_size *= 2;
             tokens = realloc(tokens, token_buf_size * sizeof(tokens));
         }
-        skip_chars(&st, SPACE);      // skip any leading whitespace
-        if (peek_char(&st) == ';') { // comments
-            skip_until(&st, '\n');   // ignore the rest of the line
-            skip_chars(&st, SPACE);  // skip any remaining space
+        skip_chars(&st, SPACE);         // skip any leading whitespace
+        while (peek_char(&st) == ';') { // comments
+            skip_until(&st, '\n');      // ignore the rest of the line
+            skip_chars(&st, SPACE);     // skip any remaining space
+        }
+        if (st.pos > st.size - 1) { // check if end
+            break;
         }
         // process character
         char c = peek_char(&st);
