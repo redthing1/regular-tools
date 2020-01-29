@@ -15,3 +15,9 @@ asm_sources = [
     'instr.h',
 ]
 executable('regular-asm', asm_sources)
+
+emu_sources = [
+    'emu.c', 'emu.h',
+    'disasm.h'
+]
+executable('regular-emu', emu_sources)

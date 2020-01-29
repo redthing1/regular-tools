@@ -407,30 +407,36 @@ void write_program(FILE *ouf, Program prg) {
 /* #endregion */
 
 /* #region Debugging */
+
+void dump_statement(Statement st) {
+    const char *op_name = get_instruction_mnem(st.opcode);
+    printf("OP: [%3s]", op_name);
+    if ((st.type & INSTR_K_R1) > 0) {
+        printf(" %-3s", get_register_name(st.a1));
+    }
+    if ((st.type & INSTR_K_R2) > 0) {
+        printf(" %-3s", get_register_name(st.a2));
+    }
+    if ((st.type & INSTR_K_R3) > 0) {
+        printf(" %-3s", get_register_name(st.a3));
+    }
+    if ((st.type & INSTR_K_I1) > 0) {
+        uint32_t v = (st.a1 << 16) | (st.a2 << 8) | st.a3;
+        printf(" $%02x", v);
+    } else if ((st.type & INSTR_K_I2) > 0) {
+        uint32_t v = (st.a2 << 8) | st.a3;
+        printf(" $%02x", v);
+    } else if ((st.type & INSTR_K_I3) > 0) {
+        printf(" $%02x", st.a3);
+    }
+    printf("\n");
+}
+
 void dump_program(Program prg) {
     for (int i = 0; i < prg.statement_count; i++) {
         Statement st = prg.statements[i];
-        const char *op_name = get_instruction_mnem(st.opcode);
-        printf("OP: [%3s]", op_name);
-        if ((st.type & INSTR_K_R1) > 0) {
-            printf(" %-3s", get_register_name(st.a1));
-        }
-        if ((st.type & INSTR_K_R2) > 0) {
-            printf(" %-3s", get_register_name(st.a2));
-        }
-        if ((st.type & INSTR_K_R3) > 0) {
-            printf(" %-3s", get_register_name(st.a3));
-        }
-        if ((st.type & INSTR_K_I1) > 0) {
-            uint32_t v = (st.a1 << 16) | (st.a2 << 8) | st.a3;
-            printf(" $%02x", v);
-        } else if ((st.type & INSTR_K_I2) > 0) {
-            uint32_t v = (st.a2 << 8) | st.a3;
-            printf(" $%02x", v);
-        } else if ((st.type & INSTR_K_I3) > 0) {
-            printf(" $%02x", st.a3);
-        }
-        printf("\n");
+        dump_statement(st);
     }
 }
+
 /* #endregion */

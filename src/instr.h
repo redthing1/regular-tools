@@ -7,7 +7,8 @@ provides instruction declarations
 #include "util.h"
 #include <stdint.h>
 
-typedef uint8_t ARG;
+typedef uint8_t BYTE;
+typedef BYTE ARG;
 typedef ARG OPCODE;
 
 typedef enum {
