@@ -218,6 +218,16 @@ const char *get_instruction_mnem(OPCODE op) {
         return "int";
     case OP_BRX:
         return "brx";
+    case OP_JMP:
+        return "jmp";
+    case OP_JMI:
+        return "jmi";
+    case OP_PSH:
+        return "psh";
+    case OP_POP:
+        return "pop";
+    case OP_SWP:
+        return "swp";
     default:
         return NULL; // unrecognized mnemonic
         break;

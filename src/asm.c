@@ -53,17 +53,28 @@ int main(int argc, char **argv) {
     }
     // parse the tokens into a program
     printf("== PARSE ==\n");
-    Program prg_pass1 = parse(lex_result);
-    // compile pseudo-instructions
-    Program prg_out = compile_pseudo(prg_pass1);
-    free_program(prg_pass1);
-    // compile the program
-    if (prg_out.status == 0) { // successful program
-        printf("== DUMP ==\n");
-        dump_program(prg_out);
-        // write out the program to binary
-        write_program(ouf_fp, prg_out, options.write_header);
+    // parse program with utility instructions
+    Program prg_hl = parse(lex_result);
+    if (prg_hl.status != 0) { // unsuccessful program
+        printf("assembly pass 0 failed [%d]\n", prg_hl.status);
+        return 2;
     }
+
+    // dump the pass 0 program
+    printf("== DUMP [pre] ==\n");
+    dump_program(prg_hl);
+
+    // compile pseudo-instructions - pass 1
+    Program prg_pass1 = compile_pseudo(prg_hl);
+    Program prg_out = compile_pseudo(prg_pass1);
+    free_program(prg_hl);
+    free_program(prg_pass1);
+    
+    // dump the finished program
+    printf("== DUMP [fin] ==\n");
+    dump_program(prg_out);
+    // write out the program to binary
+    write_program(ouf_fp, prg_out, options.write_header);
 
     // clean up
     free(inf_read.content);
