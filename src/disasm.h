@@ -36,12 +36,9 @@ Program decode_program(char *buf, size_t buf_sz) {
         ARG a2 = take_arg(&st);
         ARG a3 = take_arg(&st);
         
-        // figure out instruction and interpret arguments
-        const char *mnem = get_instruction_mnem(op);
-        InstructionInfo instr_info = get_instruction_info((char*) mnem);
-
-        // create statement
-        Statement stmt = {.opcode = op, .a1 = a1, .a2 = a2, .a3 = a3, .type = instr_info.type};
+        // interpret instruction
+        Statement stmt = {.opcode = op, .a1 = a1, .a2 = a2, .a3 = a3};
+        populate_statement(&stmt);
 
         // save statement
         statements[statement_count++] = stmt;

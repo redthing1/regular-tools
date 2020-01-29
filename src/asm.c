@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include "asm.h"
 #include "util.h"
+#include "asm.h"
+#include "asm_ext.h"
 
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] assembler\n");
@@ -37,18 +38,22 @@ int main(int argc, char **argv) {
     }
     // parse the tokens into a program
     printf("== PARSE ==\n");
-    Program prg = parse(lex_result);
-    if (prg.status == 0) { // successful program
+    Program prg_pass1 = parse(lex_result);
+    // compile pseudo-instructions
+    Program prg_out = compile_pseudo(prg_pass1);
+    free_program(prg_pass1);
+    // compile the program
+    if (prg_out.status == 0) { // successful program
         printf("== DUMP ==\n");
-        dump_program(prg);
+        dump_program(prg_out);
         // write out the program to binary
-        write_program(ouf_fp, prg);
+        write_program(ouf_fp, prg_out);
     }
 
     // clean up
     free(inf_read.content);
     free_lex_result(lex_result);
-    free_program(prg);
+    free_program(prg_out);
 
     fclose(ouf_fp); // close output file
 

@@ -270,7 +270,13 @@ uint32_t parse_numeric(ParserState *st) {
     return val;
 }
 
-Statement read_statement(ParserState *st, char *mnem) {
+void populate_statement(Statement *stmt) {
+        const char *mnem = get_instruction_mnem(stmt->opcode);
+        InstructionInfo instr_info = get_instruction_info((char*) mnem);
+        stmt->type = instr_info.type;
+}
+
+Statement parse_statement(ParserState *st, char *mnem) {
     InstructionInfo instr_info = get_instruction_info(mnem);
     Statement stmt = {.opcode = 0, .a1 = 0, .a2 = 0, .a3 = 0, .type = instr_info.type};
     if (instr_info.type == INSTR_INV) {
@@ -357,7 +363,7 @@ Program parse(LexResult lexed) {
                 // this is an instruction
                 // look at the instruction name and figure out what to do
                 char *mnem = id_token.cont;
-                Statement stmt = read_statement(&st, mnem);
+                Statement stmt = parse_statement(&st, mnem);
                 // dump instruction info
                 statements[statement_count++] = stmt;
                 break;
