@@ -12,3 +12,7 @@ cd src
 cd build
 ninja # run ninja to build binaries
 ```
+
+## doc
+
+- [assembler doc](doc/asm.md)
