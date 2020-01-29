@@ -35,11 +35,13 @@ typedef struct {
     OPCODE opcode;
     ARG a1, a2, a3;
     InstructionType type;
+    int sz;
 } Statement;
 
 typedef struct {
     InstructionType type;
     OPCODE opcode;
+    int fin_sz;
 } InstructionInfo;
 
 /* #region OPCODE and REG definitions */
@@ -69,6 +71,7 @@ typedef struct {
 // opcodes - _ad/pseudo
 #define OP_JMP 0xa0
 #define OP_JMI 0xa1
+#define OP_SWP 0xb0
 
 // registers
 #define REG_RXX 0x70
@@ -109,45 +112,47 @@ typedef struct {
 
 InstructionInfo get_instruction_info(char *mnem) {
     if (streq(mnem, "nop")) {
-        return (InstructionInfo){.type = INSTR_OP, .opcode = OP_NOP};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP, .opcode = OP_NOP};
     } else if (streq(mnem, "add")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_ADD};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_ADD};
     } else if (streq(mnem, "sub")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_SUB};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_SUB};
     } else if (streq(mnem, "and")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_AND};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_AND};
     } else if (streq(mnem, "orr")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_ORR};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_ORR};
     } else if (streq(mnem, "xor")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_XOR};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_XOR};
     } else if (streq(mnem, "not")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_NOT};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_NOT};
     } else if (streq(mnem, "lsh")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_LSH};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_LSH};
     } else if (streq(mnem, "ash")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_ASH};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_ASH};
     } else if (streq(mnem, "tcu")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_TCU};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_TCU};
     } else if (streq(mnem, "tcs")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R_R, .opcode = OP_TCS};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_TCS};
     } else if (streq(mnem, "set")) {
-        return (InstructionInfo){.type = INSTR_OP_R_I, .opcode = OP_SET};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_I, .opcode = OP_SET};
     } else if (streq(mnem, "mov")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_MOV};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_MOV};
     } else if (streq(mnem, "ldw")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_LDW};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_LDW};
     } else if (streq(mnem, "stw")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_STW};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_STW};
     } else if (streq(mnem, "ldb")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_LDB};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_LDB};
     } else if (streq(mnem, "stb")) {
-        return (InstructionInfo){.type = INSTR_OP_R_R, .opcode = OP_STB};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_STB};
     } else if (streq(mnem, "hlt")) {
-        return (InstructionInfo){.type = INSTR_OP, .opcode = OP_HLT};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP, .opcode = OP_HLT};
     } else if (streq(mnem, "jmp")) {
-        return (InstructionInfo){.type = INSTR_OP_R, .opcode = OP_JMP};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R, .opcode = OP_JMP};
     } else if (streq(mnem, "jmi")) {
-        return (InstructionInfo){.type = INSTR_OP_I, .opcode = OP_JMI};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_I, .opcode = OP_JMI};
+    } else if (streq(mnem, "swp")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
     } else {
         // unrecognized mnem
         return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};

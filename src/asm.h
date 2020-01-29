@@ -281,6 +281,7 @@ void populate_statement(Statement *stmt) {
     const char *mnem = get_instruction_mnem(stmt->opcode);
     InstructionInfo instr_info = get_instruction_info((char *)mnem);
     stmt->type = instr_info.type;
+    stmt->sz = instr_info.fin_sz;
 }
 
 Statement parse_statement(ParserState *st, char *mnem) {
@@ -405,7 +406,7 @@ Program parse(LexResult lexed) {
                 // dump instruction info
                 statements[statement_count++] = stmt;
                 // update offset
-                st.offset += sizeof(ARG) * INSTR_SIZE;
+                st.offset += stmt.sz;
             }
             break;
         }
