@@ -1,10 +1,31 @@
 #include <stdio.h>
+#include "util.h"
+#include "asm.h"
+#include "disasm.h"
 
 int main(int argc, char **argv) {
-  printf("[REGULAR_ad] disassembler\n");
-  if (argc < 2) {
-      printf("usage: disasm --opts <in> <out>\n");
-  }
+    printf("[REGULAR_ad] disassembler\n");
+    if (argc < 2) {
+        printf("usage: disasm --opts <in>\n");
+    }
 
-  return 0;
+    char *in_file = argv[1];
+    
+    // open input file
+    FILE *inf_fp = fopen(in_file, "rb");
+    if (inf_fp == NULL) {
+        fprintf(stderr, "cannot open input file\n");
+        return 1;
+    }
+
+    FileReadResult inf_read = util_read_file_contents(inf_fp);
+    fclose(inf_fp);
+
+    Program prg = decode_program(inf_read.content, inf_read.size);
+
+    // clean up
+    free(inf_read.content);
+    free_program(prg);
+
+    return 0;
 }
