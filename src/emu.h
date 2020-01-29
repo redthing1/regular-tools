@@ -14,44 +14,61 @@ typedef struct {
     ARG *reg;
     BYTE *mem;
     size_t mem_sz;
+    bool executing;
 } EmulatorState;
 
 EmulatorState *emu_init() {
-    EmulatorState *st = malloc(sizeof(EmulatorState));
-    st->mem_sz = MEMORY_SIZE;
-    st->mem = malloc(MEMORY_SIZE * sizeof(BYTE));
+    EmulatorState *emu_st = malloc(sizeof(EmulatorState));
+    emu_st->mem_sz = MEMORY_SIZE;
+    emu_st->mem = malloc(MEMORY_SIZE * sizeof(BYTE));
 
-    return st;
+    return emu_st;
 }
 
 /**
  * Load the program data into memory
  */
-void emu_load(EmulatorState *st, int offset, char *program, size_t program_sz) {
-    memcpy(st->mem + offset, program, program_sz);
+void emu_load(EmulatorState *emu_st, int offset, char *program, size_t program_sz) {
+    memcpy(emu_st->mem + offset, program, program_sz);
 }
 
-void emu_run(EmulatorState *st, ARG entry) {
-    // set PC register to entrypoint
-    st->reg[0] = entry;
-    // start decode loop
-    bool executing = true;
-    while (executing) {
-        // decode instruction
-        ARG op = st->mem[st->reg[0]];
-        ARG d1 = st->mem[st->reg[0] + 1];
-        ARG d2 = st->mem[st->reg[0] + 2];
-        ARG d3 = st->mem[st->reg[0] + 3];
-        st->reg[0] += 4; // advance PC
-        Statement st = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
-        dump_statement(st);
+void emu_exec(EmulatorState *emu_st, Statement instr) {
+    switch (instr.opcode) {
+    case OP_NOP: {
+        // do nothing
+        break;
+    }
+    case OP_HLT: {
+        emu_st->executing = false;
+        break;
+    }
+    default:
+        break;
     }
 }
 
-void emu_free(EmulatorState *st) {
+void emu_run(EmulatorState *emu_st, ARG entry) {
+    // set PC regiemu_ster to entrypoint
+    emu_st->reg[0] = entry;
+    emu_st->executing = true;
+    // emu_start decode loop
+    while (emu_st->executing) {
+        // decode inemu_struction
+        ARG op = emu_st->mem[emu_st->reg[0]];
+        ARG d1 = emu_st->mem[emu_st->reg[0] + 1];
+        ARG d2 = emu_st->mem[emu_st->reg[0] + 2];
+        ARG d3 = emu_st->mem[emu_st->reg[0] + 3];
+        emu_st->reg[0] += 4; // advance PC
+        Statement emu_stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
+        dump_statement(emu_stmt);
+        emu_exec(emu_st, emu_stmt);
+    }
+}
+
+void emu_free(EmulatorState *emu_st) {
     // free data
-    free(st->reg);
-    free(st->mem);
-    // free emu state
-    free(st);
+    free(emu_st->reg);
+    free(emu_st->mem);
+    // free emu emu_state
+    free(emu_st);
 }
