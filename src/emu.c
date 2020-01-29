@@ -24,8 +24,8 @@ int main(int argc, char **argv) {
 
     EmulatorState *emu_st = emu_init();
     // copy program to offset 0
-    emu_load(emu_st, 0, inf_read.content, inf_read.size);
-    emu_run(emu_st, 0);
+    RGHeader hd = emu_load(emu_st, 0, inf_read.content, inf_read.size);
+    emu_run(emu_st, hd.entry);
 
     // clean up
     emu_free(emu_st);

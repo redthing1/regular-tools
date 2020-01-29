@@ -30,8 +30,12 @@ EmulatorState *emu_init() {
 /**
  * Load the program data into memory
  */
-void emu_load(EmulatorState *emu_st, int offset, char *program, size_t program_sz) {
-    memcpy(emu_st->mem + offset, program, program_sz);
+RGHeader emu_load(EmulatorState *emu_st, int offset, char *program, size_t program_sz) {
+    // read RG header
+    RGHeader hd = decode_header(program, program_sz);
+    dump_header(hd);
+    memcpy(emu_st->mem + offset, program + hd.decode_offset, program_sz);
+    return hd;
 }
 
 void emu_exec(EmulatorState *emu_st, Statement instr) {
