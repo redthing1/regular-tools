@@ -9,6 +9,7 @@ provides emulation capability
 #include <stdbool.h>
 
 const size_t MEMORY_SIZE = 64 * 1024; // 65K
+const size_t REGISTER_COUNT = 32;
 
 typedef struct {
     ARG *reg;
@@ -21,6 +22,7 @@ EmulatorState *emu_init() {
     EmulatorState *emu_st = malloc(sizeof(EmulatorState));
     emu_st->mem_sz = MEMORY_SIZE;
     emu_st->mem = malloc(MEMORY_SIZE * sizeof(BYTE));
+    emu_st->reg = malloc(REGISTER_COUNT * sizeof(ARG));
 
     return emu_st;
 }
@@ -59,9 +61,9 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         ARG d2 = emu_st->mem[emu_st->reg[0] + 2];
         ARG d3 = emu_st->mem[emu_st->reg[0] + 3];
         emu_st->reg[0] += 4; // advance PC
-        Statement emu_stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
-        dump_statement(emu_stmt);
-        emu_exec(emu_st, emu_stmt);
+        Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
+        dump_statement(stmt);
+        emu_exec(emu_st, stmt);
     }
 }
 
