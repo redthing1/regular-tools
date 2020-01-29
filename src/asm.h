@@ -398,11 +398,13 @@ void dump_program(Program prg) {
             printf(" %-3s", get_register_name(st.a3));
         }
         if ((st.type & INSTR_K_I1) > 0) {
-            printf(" $%-2x", (st.a1 << 16) | (st.a2 << 8) | st.a1);
+            uint32_t v = (st.a1 << 16) | (st.a2 << 8) | st.a3;
+            printf(" $%02x", v);
         } else if ((st.type & INSTR_K_I2) > 0) {
-            printf(" $%-2x", (st.a2 << 8) | st.a1);
+            uint32_t v = (st.a2 << 8) | st.a3;
+            printf(" $%02x", v);
         } else if ((st.type & INSTR_K_I3) > 0) {
-            printf(" $%-2x", st.a3);
+            printf(" $%02x", st.a3);
         }
         printf("\n");
     }
