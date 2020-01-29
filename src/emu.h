@@ -100,6 +100,18 @@ void emu_exec(EmulatorState *emu_st, Statement instr) {
         emu_st->reg[instr.a1] = ~emu_st->reg[instr.a2];
         break;
     }
+    case OP_LSH: {
+        break;
+    }
+    case OP_ASH: {
+        break;
+    }
+    case OP_TCU: {
+        break;
+    }
+    case OP_TCS: {
+        break;
+    }
     case OP_SET: {
         emu_st->reg[instr.a1] = instr.a2 | (instr.a3 << 8);
         break;
@@ -120,6 +132,10 @@ void emu_exec(EmulatorState *emu_st, Statement instr) {
         emu_st->mem[addr + 1] = (emu_st->reg[instr.a2] >> 8) & 0xff;
         emu_st->mem[addr + 2] = (emu_st->reg[instr.a2] >> 16) & 0xff;
         emu_st->mem[addr + 3] = (emu_st->reg[instr.a2] >> 24) & 0xff;
+        break;
+    }
+    case OP_INT: {
+        printf("INT: $%08x", emu_st->reg[instr.a1]);
         break;
     }
     case OP_HLT: {

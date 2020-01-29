@@ -3,6 +3,7 @@
 #entry :main
 
 test1:
+    int $00ff
     hlt
 
 main:
