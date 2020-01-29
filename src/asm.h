@@ -201,12 +201,37 @@ typedef struct {
 } Program;
 
 typedef struct {
+    LexResult* lexed;
     int token; // token index
     int cpos; // char position of reading
 } ParserState;
 
+Token peek_token(ParserState* st) {
+    return st->lexed->tokens[st->token];
+}
+
+Token take_token(ParserState* st) {
+    Token tok = peek_token(st);
+    st->token++;
+    st->cpos += strlen(tok.cont);
+    return tok;
+}
+
+Token expect_token(ParserState* st, CharType type) {
+    Token next = peek_token(st);
+    CharType next_type = next.kind;
+    if (next_type == type) {
+        // expected token found
+        return take_token(st);
+    } else {
+        // expected token not found
+        printf("unexpected token@%d: %s [%d]\n", st->cpos, next.cont, next.kind);
+        return (Token) {.cont = NULL, .kind = UNKNOWN};
+    }
+}
+
 Program parse(LexResult lexed) {
-    ParserState st = {.token = 0, .cpos = 0};
+    ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0};
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(statements));
     int statement_count = 0;
