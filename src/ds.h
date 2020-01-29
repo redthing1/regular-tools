@@ -41,9 +41,9 @@ void stack_push(List *l, void *d) {
     ListNode *node;
     node = malloc(sizeof(node));
     node->data = d;
+    node->link = NULL;
     // there is no top node, make a new one
     if (!l->top) {
-        node->link = NULL;
         l->top = node;
     } else {
         // get the top node
@@ -68,9 +68,9 @@ void list_push(List *l, void *d) {
     ListNode *node;
     node = malloc(sizeof(node));
     node->data = d;
+    node->link = NULL;
     // check top node
     if (!l->top) {
-        node->link = NULL;
         l->top = node;
     } else {
         // get the last node
