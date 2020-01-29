@@ -344,7 +344,7 @@ Program parse(LexResult lexed) {
                 expect_token(&st, MARK);
                 Token lbl = expect_token(&st, IDENTIFIER);
                 // TODO: interpret the entry point label
-                printf("TODO: @#%d store entrypoint\n", st.token);
+                printf("TODO: T#%d store entrypoint\n", st.token);
             }
             break;
         }
@@ -356,7 +356,7 @@ Program parse(LexResult lexed) {
                 // this is a label definition ("label:")
                 take_token(&st); // eat the mark
                 // TODO: store the label
-                printf("TODO: @#%d store label\n", st.token);
+                printf("TODO: T#%d store label\n", st.token);
                 break;
             }
             
