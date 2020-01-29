@@ -56,7 +56,7 @@ void emu_dump(EmulatorState *emu_st) {
     // dump registers
     for (ARG i = 0; i < SIMPLE_REGISTER_COUNT; i++) {
         const char *reg_name = get_register_name(i);
-        printf("%5s: %x\n", reg_name, emu_st->reg[i]);
+        printf("%5s: $%04x\n", reg_name, emu_st->reg[i]);
     }
 }
 
