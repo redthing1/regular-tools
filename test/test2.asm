@@ -9,4 +9,4 @@ test1:
 
 main:
     ; test jump
-    jmi ::test1
+    jmi ::test1 ; compiles to [set rA <offset>]
