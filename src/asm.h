@@ -124,15 +124,15 @@ void skip_until(LexerState *st, char until) {
 
 LexResult lex(char *buf, size_t buf_sz) {
     LexerState st = {.buf = buf, .size = buf_sz, .pos = 0, .line = 1, .line_start = 0};
-    int token_buf_size = 128;
-    Token *tokens = malloc(token_buf_size * sizeof(tokens));
+    int token_buf_size = 256;
+    Token *tokens = malloc(token_buf_size * sizeof(Token));
     int token_count = 0;
     char *working = NULL;
 
     while (st.pos < st.size) {
         if (token_count >= token_buf_size) {
             token_buf_size *= 2;
-            tokens = realloc(tokens, token_buf_size * sizeof(tokens));
+            tokens = realloc(tokens, token_buf_size * sizeof(Token));
             printf("reallocating tokens[]\n");
         }
         skip_chars(&st, SPACE);         // skip any leading whitespace
@@ -296,7 +296,7 @@ void parse_label_ref(ParserState *st, Token mark, char *prev) {
         // this is a label definition ("label:")
         // store the label
         // create and store a label
-        Label *label = malloc(sizeof(label));
+        Label *label = malloc(sizeof(Label));
         label->label = prev;
         label->offset = st->offset;
         list_push(st->labels, label);
@@ -395,7 +395,7 @@ Statement parse_statement(ParserState *st, char *mnem) {
 Program parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
     int statement_buf_size = 128;
-    Statement *statements = malloc(statement_buf_size * sizeof(statements));
+    Statement *statements = malloc(statement_buf_size * sizeof(Statement));
     int statement_count = 0;
 
     Program prg;

@@ -16,7 +16,7 @@ Statement take_statement(PseudoAssemblerState *pas) { return pas->src->statement
 
 Program compile_pseudo(Program inp) {
     int statement_buf_size = 128;
-    Statement *new_statements = malloc(statement_buf_size * sizeof(new_statements));
+    Statement *new_statements = malloc(statement_buf_size * sizeof(Statement));
     int new_statement_count = 0;
 
     Program prg;

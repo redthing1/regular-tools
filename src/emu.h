@@ -31,9 +31,9 @@ EmulatorState *emu_init() {
     EmulatorState *emu_st = malloc(sizeof(EmulatorState));
     emu_st->mem_sz = MEMORY_SIZE;
 
-    size_t mem_alloc_sz = MEMORY_SIZE * sizeof(emu_st->mem);
+    size_t mem_alloc_sz = MEMORY_SIZE * sizeof(BYTE);
     emu_st->mem = malloc(mem_alloc_sz);
-    size_t reg_alloc_sz = REGISTER_COUNT * sizeof(emu_st->reg);
+    size_t reg_alloc_sz = REGISTER_COUNT * sizeof(UWORD);
     emu_st->reg = malloc(reg_alloc_sz);
 
     // initialize all data

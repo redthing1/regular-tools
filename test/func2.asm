@@ -13,7 +13,7 @@ func_add: ; add(a, b) => a + b
     ldw r6 r1
     add r5 r5 r6 ; compute result -> r5
     ; return (arg1 + arg2) to [sp-4]
-    set at 4
+    set at $4
     sub r1 sp at
     stw r1 r5 ; store return value (r5)
     int r7 ; dumpstk
