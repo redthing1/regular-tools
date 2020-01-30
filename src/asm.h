@@ -206,6 +206,8 @@ typedef struct {
     int statement_count;
     uint16_t entry;
     int status;
+    BYTE* data;
+    size_t data_size;
 } Program;
 
 typedef struct {
@@ -220,6 +222,15 @@ typedef struct {
     char *label;
     int offset;
 } Label;
+
+void program_init(Program *p) {
+    p->statements = NULL;
+    p->statement_count = 0;
+    p->entry = 0;
+    p->status = 0;
+    p->data = NULL;
+    p->data_size = 0;
+}
 
 void parser_state_cleanup(ParserState *st) {
     // clean up labels
@@ -384,7 +395,11 @@ Program parse(LexResult lexed) {
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(statements));
     int statement_count = 0;
-    Program prg = {.statements = statements, .status = 0};
+    
+    Program prg;
+    program_init(&prg);
+    prg.statements = statements;
+
     List labels;
     st.labels = &labels;
     list_init(&labels);

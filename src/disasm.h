@@ -51,7 +51,10 @@ Program decode_program(char *buf, size_t buf_sz) {
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(statements));
     int statement_count = 0;
-    Program prg = {.statements = statements, .status = 0, .entry = hd.entry};
+    Program prg;
+    program_init(&prg);
+    prg.statements = statements;
+    prg.entry = hd.entry;
     // check size multiple
     if ((hd.code_size % INSTR_SIZE) != 0) {
         // invalid size for program
