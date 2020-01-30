@@ -73,7 +73,7 @@ CharType classify_char(char c) {
     if ((c >= 'a' && c <= 'f')) {
         type |= NUMERIC_HEX;
     }
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_')) {
         type |= ALPHA;
     } else if (c >= '0' && c <= '9') {
         type |= NUMERIC;
