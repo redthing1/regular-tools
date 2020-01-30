@@ -1,4 +1,4 @@
-; test function calls
+; test an add function
 
 #entry :main
 
