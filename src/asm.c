@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     // parse the tokens into a program
     printf("== PARSE ==\n");
     // parse program with utility instructions
-    Program prg_hl = parse(lex_result, options.compat);
+    Program prg_hl = parse(lex_result);
     if (prg_hl.status != 0) { // unsuccessful program
         printf("assembly pass 0 failed [%d]\n", prg_hl.status);
         return 2;

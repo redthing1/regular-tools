@@ -395,7 +395,7 @@ Statement parse_statement(ParserState *st, char *mnem) {
     return stmt;
 }
 
-Program parse(LexResult lexed, bool compat) {
+Program parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(Statement));
@@ -409,11 +409,6 @@ Program parse(LexResult lexed, bool compat) {
     st.labels = &labels;
     list_init(&labels);
     char *entry_lbl = NULL;
-
-    if (!compat) {
-        // offset entry by header size
-        st.offset += HEADER_SIZE;
-    }
 
     // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
@@ -444,7 +439,6 @@ Program parse(LexResult lexed, bool compat) {
                 }
                 pack_len = pack_len / 2;              // divide by two because 0xff = 1 byte
                 BYTE *pack_data = datahex(pack.cont); // convert data from hex
-                reverse_bytes(pack_data, pack_len);   // flip data (for endianness)
                 // write the pack data to the binary
                 if (!prg.data) {
                     prg.data = malloc(sizeof(BYTE) * pack_len);
