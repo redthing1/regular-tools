@@ -133,6 +133,7 @@ LexResult lex(char *buf, size_t buf_sz) {
         if (token_count >= token_buf_size) {
             token_buf_size *= 2;
             tokens = realloc(tokens, token_buf_size * sizeof(tokens));
+            printf("reallocating tokens[]\n");
         }
         skip_chars(&st, SPACE);         // skip any leading whitespace
         while (peek_char(&st) == ';') { // comments
