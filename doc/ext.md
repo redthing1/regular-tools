@@ -7,7 +7,7 @@ system instructions are extensions to the architecture specification and require
 
 | Name  | Encoding   | Description                        |
 |-------|------------|------------------------------------|
-| `hlt` | 0x70       | Halt execution.                    |
+| `hlt` | 0xff       | Halt execution.                    |
 | `int` | 0x71 rA    | Interrupt with the value in rA.    |
 | `brx` | 0x72 rA rB | Branch to address in rB if rA > 0. |
 

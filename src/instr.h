@@ -69,7 +69,7 @@ typedef struct {
 #define OP_STB 0x10
 
 // opcodes - _ad/hardware
-#define OP_HLT 0x70
+#define OP_HLT 0xff
 #define OP_INT 0x71
 #define OP_BRX 0x72
 
