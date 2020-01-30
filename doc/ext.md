@@ -1,9 +1,9 @@
 
 # REGULAR_ad extension documentation
 
-## system instructions
+## hardware instructions
 
-system instructions are extensions to the architecture specification and require hardware support.
+hardware instructions are extensions to the architecture specification and require hardware support.
 
 | Name  | Encoding   | Description                        |
 |-------|------------|------------------------------------|
