@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
     printf("== DUMP [fin] ==\n");
     dump_program(prg_out);
     // write out the program to binary
+    printf("== WRITE ==\n");
     write_program(ouf_fp, prg_out, options.write_header);
 
     // clean up

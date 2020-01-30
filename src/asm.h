@@ -530,6 +530,7 @@ void write_program(FILE *ouf, Program prg, bool write_header) {
         uint16_t code_size = prg.statement_count * INSTR_SIZE;
         fwrite(&code_size, sizeof(code_size), 1, ouf);         // code size
         fwrite(&prg.data_size, sizeof(prg.data_size), 1, ouf); // data size
+        printf("header[%d] \n", HEADER_SIZE);
     } else {
         printf("--bare given, not writing header\n");
     }
