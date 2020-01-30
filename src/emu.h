@@ -279,6 +279,7 @@ void emu_exec(EmulatorState *emu_st, Statement in) {
  */
 void emu_run(EmulatorState *emu_st, ARG entry) {
     // set PC regiemu_ster to entrypoint
+    printf("jumping to $%04x\n", entry);
     emu_st->reg[REG_RPC] = entry;
     emu_st->executing = true;
     // emu_start decode loop

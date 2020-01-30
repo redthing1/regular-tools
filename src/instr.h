@@ -16,6 +16,8 @@ typedef uint32_t UWORD; // unsigned word
 typedef BYTE ARG;   // args are one byte
 typedef ARG OPCODE; // opcodes are one arg
 
+#define HEADER_SIZE 8 // header size
+
 typedef enum {
     INSTR_INV = 0, // invalid instruction
     INSTR_OP = 1 << 0,
@@ -311,34 +313,34 @@ const char *get_register_name(ARG reg) {
         REG_NAMECASE(X);
     case REG_RPC:
         return "pc";
-    REG_NAMECASE(1);
-    REG_NAMECASE(2);
-    REG_NAMECASE(3);
-    REG_NAMECASE(4);
-    REG_NAMECASE(5);
-    REG_NAMECASE(6);
-    REG_NAMECASE(7);
-    REG_NAMECASE(8);
-    REG_NAMECASE(9);
-    REG_NAMECASE(10);
-    REG_NAMECASE(11);
-    REG_NAMECASE(12);
-    REG_NAMECASE(13);
-    REG_NAMECASE(14);
-    REG_NAMECASE(15);
-    REG_NAMECASE(16);
-    REG_NAMECASE(17);
-    REG_NAMECASE(18);
-    REG_NAMECASE(19);
-    REG_NAMECASE(20);
-    REG_NAMECASE(21);
-    REG_NAMECASE(22);
-    REG_NAMECASE(23);
-    REG_NAMECASE(24);
-    REG_NAMECASE(25);
-    REG_NAMECASE(26);
-    REG_NAMECASE(27);
-    REG_NAMECASE(28);
+        REG_NAMECASE(1);
+        REG_NAMECASE(2);
+        REG_NAMECASE(3);
+        REG_NAMECASE(4);
+        REG_NAMECASE(5);
+        REG_NAMECASE(6);
+        REG_NAMECASE(7);
+        REG_NAMECASE(8);
+        REG_NAMECASE(9);
+        REG_NAMECASE(10);
+        REG_NAMECASE(11);
+        REG_NAMECASE(12);
+        REG_NAMECASE(13);
+        REG_NAMECASE(14);
+        REG_NAMECASE(15);
+        REG_NAMECASE(16);
+        REG_NAMECASE(17);
+        REG_NAMECASE(18);
+        REG_NAMECASE(19);
+        REG_NAMECASE(20);
+        REG_NAMECASE(21);
+        REG_NAMECASE(22);
+        REG_NAMECASE(23);
+        REG_NAMECASE(24);
+        REG_NAMECASE(25);
+        REG_NAMECASE(26);
+        REG_NAMECASE(27);
+        REG_NAMECASE(28);
     case REG_RAD:
         return "ad";
     case REG_RAT:

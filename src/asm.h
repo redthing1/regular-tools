@@ -268,7 +268,7 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
-void parse_label_ref(ParserState *st, Token mark, char *prev) {
+uint16_t parse_label_ref(ParserState *st, Token mark, char *prev) {
     // check if it's a double tok
     if (strlen(mark.cont) > 1) { // check if :: instead of :
         // this is a label reference ("::label")
@@ -292,6 +292,8 @@ void parse_label_ref(ParserState *st, Token mark, char *prev) {
 
         st->lexed->tokens[st->token].cont = patch_cbuf;
         st->lexed->tokens[st->token].kind = NUMERIC_CONSTANT;
+
+        return lb_offset;
     } else {
         // this is a label definition ("label:")
         // store the label
@@ -300,6 +302,7 @@ void parse_label_ref(ParserState *st, Token mark, char *prev) {
         label->label = prev;
         label->offset = st->offset;
         list_push(st->labels, label);
+        return 0;
     }
 }
 
@@ -392,7 +395,7 @@ Statement parse_statement(ParserState *st, char *mnem) {
     return stmt;
 }
 
-Program parse(LexResult lexed) {
+Program parse(LexResult lexed, bool compat) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(Statement));
@@ -406,6 +409,11 @@ Program parse(LexResult lexed) {
     st.labels = &labels;
     list_init(&labels);
     char *entry_lbl = NULL;
+
+    if (!compat) {
+        // offset entry by header size
+        st.offset += HEADER_SIZE;
+    }
 
     // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
@@ -449,6 +457,7 @@ Program parse(LexResult lexed) {
                 // update offset
                 prg.data_size += pack_len;
                 st.offset += pack_len;
+                printf("data block, len: $%04x\n", (UWORD)pack_len);
             }
             break;
         }
@@ -498,8 +507,6 @@ Program parse(LexResult lexed) {
         } while (n);
         // set entrypoint to label offset
         prg.entry = lb_offset;
-        // add data size to entry offset
-        prg.entry += prg.data_size;
     }
 
     parser_state_cleanup(&st);
@@ -521,8 +528,6 @@ void free_program(Program prg, bool free_data) {
 /* #endregion */
 
 /* #region Binary */
-
-#define HEADER_SIZE 8
 
 void write_short(FILE *ouf, uint8_t v) {
     char w0 = (v >> 0) & 0xff;
@@ -597,10 +602,11 @@ void write_program(FILE *ouf, Program prg, bool compat) {
 
 void dump_statement(Statement st, bool rich) {
     const char *op_name = get_instruction_mnem(st.opcode);
-    if (rich)
-        printf("OP: [%3s]", op_name);
-    else
+    if (rich) {
+        printf("OP:   [%3s]", op_name);
+    } else {
         printf("    %3s", op_name);
+    }
     if ((st.type & INSTR_K_R1) > 0) {
         printf(" %-3s", get_register_name(st.a1));
     }
