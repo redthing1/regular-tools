@@ -50,7 +50,7 @@ void dump_header(RGHeader hd) {
 Program decode_program(char *buf, size_t buf_sz) {
     // read header
     RGHeader hd = decode_header(buf, buf_sz);
-    DecoderState st = {.buf = buf, .size = hd.code_size, .pos = hd.decode_offset};
+    DecoderState st = {.buf = buf, .size = hd.code_size, .pos = hd.decode_offset + hd.data_size};
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(statements));
     int statement_count = 0;
