@@ -303,7 +303,8 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         emu_st->ticks++;
         bool paused = true;
         while (emu_st->onestep && paused) {
-            // TODO: execute commands
+            // execute commands
+            printf("dbg> ");
             size_t cmd_bufsize = 256;
             char cmd_buf[cmd_bufsize];
             util_getln(cmd_buf, cmd_bufsize);
