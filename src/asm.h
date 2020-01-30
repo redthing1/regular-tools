@@ -526,9 +526,12 @@ void dump_program(Program prg) {
     printf("entry:     $%04x\n", prg.entry);
     uint16_t code_size = prg.statement_count * INSTR_SIZE;
     printf("code size: $%04x\n", code_size);
+    int offset = 0;
     for (int i = 0; i < prg.statement_count; i++) {
         Statement st = prg.statements[i];
+        printf("%04x ", offset);
         dump_statement(st);
+        offset += st.sz;
     }
 }
 
