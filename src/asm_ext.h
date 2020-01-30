@@ -116,12 +116,12 @@ Program compile_pseudo(Program inp) {
             // cal rA
             // compile to push pc then jmp to addr
             /*
-                set at 8 ; ret addr offset
+                set at 16 ; ret addr offset
                 add ad at pc ; calculate [pc + offset]
                 psh ad
                 jmp rA
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD) * 2, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD) * 4, .a3 = 0};
             Statement cmp2 = {.opcode = OP_ADD, .a1 = REG_RAD, .a2 = REG_RAT, .a3 = REG_RPC};
             Statement cmp3 = {.opcode = OP_PSH, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
             Statement cmp4 = {.opcode = OP_JMP, .a1 = in.a1, .a2 = 0, .a3 = 0};
