@@ -6,9 +6,9 @@ random utilities
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
 typedef struct {
@@ -43,4 +43,10 @@ int convert_dec_to(int val, int base) {
     if (val == 0 || base == 10)
         return val;
     return (val % base) + 10 * convert_dec_to(val / base, base);
+}
+
+void util_pause() {
+    size_t pause_bufsize = 256;
+    char pause_buf[pause_bufsize];
+    fgets(pause_buf, pause_bufsize, stdin);
 }

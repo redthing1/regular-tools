@@ -19,6 +19,8 @@ typedef struct {
     BYTE *mem;
     size_t mem_sz;
     bool executing;
+    uint64_t ticks;
+    bool onestep; // step one at a time
 } EmulatorState;
 
 EmulatorState *emu_init() {
@@ -36,6 +38,10 @@ EmulatorState *emu_init() {
 
     // set RSP to mem_sz - 1
     emu_st->reg[REG_RSP] = emu_st->mem_sz - 1;
+
+    // reset settings
+    emu_st->onestep = 0;
+    emu_st->ticks = 0;
 
     return emu_st;
 }
@@ -68,8 +74,9 @@ void emu_dump(EmulatorState *emu_st) {
         dump_rg(emu_st, i);
     }
     // dump special registers
-    dump_rg(emu_st, REG_RSP);
+    dump_rg(emu_st, REG_RAD);
     dump_rg(emu_st, REG_RAT);
+    dump_rg(emu_st, REG_RSP);
 }
 
 /**
@@ -80,9 +87,7 @@ void emu_interrupt(UWORD interrupt) {
     switch (interrupt) {
     case INTERRUPT_PAUSE: {
         printf("PAUSE");
-        size_t pause_bufsize = 256;
-        char pause_buf[pause_bufsize];
-        fgets(pause_buf, pause_bufsize, stdin);
+        util_pause();
         break;
     }
     default: {
@@ -227,6 +232,11 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         dump_statement(stmt);   // dump statement
         emu_exec(emu_st, stmt); // execute statement
         emu_dump(emu_st);       // dump state
+        
+        emu_st->ticks++;
+        if (emu_st->onestep) {
+            util_pause();
+        }
     }
 }
 
