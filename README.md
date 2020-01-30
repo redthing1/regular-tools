@@ -5,6 +5,8 @@ tools for [RegularVM](https://github.com/regular-vm) ([spec](https://github.com/
 
 implements the [`REGULAR_ad` specification](doc/ext.md), which is the REGULAR architecture with the `_ad` extension set.
 
+[sample programs](test/)
+
 ## build
 ```sh
 cd src
