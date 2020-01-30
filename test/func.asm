@@ -3,13 +3,13 @@
 #entry :main
 
 sub:
-    set r4 $01
-    int r4
     set r2 $0069 ; return value
     mov r3 sp ; retval dest [sp-4]
     set at $4
     sub r3 r3 at
     stw r3 r2 ; store retval
+    set r4 $01
+    int r4
     ret
 
 main:
