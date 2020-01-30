@@ -1,5 +1,5 @@
 
-# REGULAR_ad extension documentation
+# REGULAR_ad documentation
 
 ## hardware instructions
 
