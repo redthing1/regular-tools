@@ -112,6 +112,41 @@ Program compile_pseudo(Program inp) {
             new_statements[new_statement_count++] = cmp3;
             break;
         }
+        case OP_CAL: {
+            // cal rA
+            // compile to push pc then jmp to addr
+            /*
+                set at 8 ; ret addr offset
+                add ad at pc ; calculate [pc + offset]
+                psh ad
+                jmp rA
+            */
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD) * 2, .a3 = 0};
+            Statement cmp2 = {.opcode = OP_ADD, .a1 = REG_RAD, .a2 = REG_RAT, .a3 = REG_RPC};
+            Statement cmp3 = {.opcode = OP_PSH, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
+            Statement cmp4 = {.opcode = OP_JMP, .a1 = in.a1, .a2 = 0, .a3 = 0};
+            populate_statement(&cmp1);
+            populate_statement(&cmp2);
+            populate_statement(&cmp3);
+            populate_statement(&cmp4);
+            new_statements[new_statement_count++] = cmp1;
+            new_statements[new_statement_count++] = cmp2;
+            new_statements[new_statement_count++] = cmp3;
+            new_statements[new_statement_count++] = cmp4;
+            break;
+        }
+        case OP_RET: {
+            // ret
+            // compile to push pc then jmp to addr
+            /*
+                pop pc
+            */
+            Statement cmp1 = {.opcode = OP_POP, .a1 = REG_RPC, .a2 = 0, .a3 = 0};
+            populate_statement(&cmp1);
+            new_statements[new_statement_count++] = cmp1;
+            break;
+            break;
+        }
         default:
             // copy instruction
             new_statements[new_statement_count++] = in; // advance counter

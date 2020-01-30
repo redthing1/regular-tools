@@ -113,9 +113,9 @@ typedef struct {
 #define REG_R26 0x1a
 #define REG_R27 0x1b
 #define REG_R28 0x1c
-#define REG_R29 0x1d
-#define REG_RSP 0x1e
-#define REG_RAT 0x1f
+#define REG_RAD 0x1d
+#define REG_RAT 0x1e
+#define REG_RSP 0x1f
 
 /* #endregion */
 
@@ -171,7 +171,7 @@ InstructionInfo get_instruction_info(char *mnem) {
     } else if (streq(mnem, "cal")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 6, .type = INSTR_OP_R, .opcode = OP_CAL};
     } else if (streq(mnem, "ret")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 4, .type = INSTR_OP, .opcode = OP_RET};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP, .opcode = OP_RET};
     } else if (streq(mnem, "swp")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
     } else {
@@ -277,6 +277,8 @@ ARG get_register(char *mnem) {
         return REG_R14;
     } else if (streq(mnem, "r15")) {
         return REG_R15;
+    } else if (streq(mnem, "r29") || streq(mnem, "ad")) {
+        return REG_RAT;
     } else if (streq(mnem, "at")) {
         return REG_RAT;
     } else if (streq(mnem, "sp")) {
@@ -308,6 +310,8 @@ const char *get_register_name(ARG reg) {
         return "r7";
     case REG_R08:
         return "r8";
+    case REG_RAD:
+        return "ad";
     case REG_RAT:
         return "at";
     case REG_RSP:
