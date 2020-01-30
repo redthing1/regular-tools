@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 
     // dump the pass 0 program
     printf("== DUMP [pre] ==\n");
-    dump_program(prg_hl);
+    dump_program(prg_hl, true);
 
     // compile pseudo-instructions - pass 1
     Program prg_pass1 = compile_pseudo(prg_hl);
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
     
     // dump the finished program
     printf("== DUMP [fin] ==\n");
-    dump_program(prg_out);
+    dump_program(prg_out, true);
     // write out the program to binary
     printf("== WRITE ==\n");
     write_program(ouf_fp, prg_out, options.compat);

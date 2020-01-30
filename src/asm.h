@@ -524,7 +524,7 @@ void free_program(Program prg, bool free_data) {
 
 #define HEADER_SIZE 8
 
-void write_short(FILE* ouf, uint8_t v) {
+void write_short(FILE *ouf, uint8_t v) {
     char w0 = (v >> 0) & 0xff;
     char w1 = (v >> 8) & 0xff;
     fwrite(&w0, sizeof(w0), 1, ouf);
@@ -595,9 +595,12 @@ void write_program(FILE *ouf, Program prg, bool compat) {
 
 /* #region Debugging */
 
-void dump_statement(Statement st) {
+void dump_statement(Statement st, bool rich) {
     const char *op_name = get_instruction_mnem(st.opcode);
-    printf("OP: [%3s]", op_name);
+    if (rich)
+        printf("OP: [%3s]", op_name);
+    else
+        printf("    %3s", op_name);
     if ((st.type & INSTR_K_R1) > 0) {
         printf(" %-3s", get_register_name(st.a1));
     }
@@ -619,7 +622,7 @@ void dump_statement(Statement st) {
     printf("\n");
 }
 
-void dump_program(Program prg) {
+void dump_program(Program prg, bool rich) {
     printf("entry:     $%04x\n", prg.entry);
     uint16_t code_size = prg.statement_count * INSTR_SIZE;
     printf("code size: $%04x\n", code_size);
@@ -627,8 +630,9 @@ void dump_program(Program prg) {
     int offset = HEADER_SIZE + prg.data_size;
     for (int i = 0; i < prg.statement_count; i++) {
         Statement st = prg.statements[i];
-        printf("%04x ", offset);
-        dump_statement(st);
+        if (rich)
+            printf("%04x ", offset);
+        dump_statement(st, rich);
         offset += st.sz;
     }
 }

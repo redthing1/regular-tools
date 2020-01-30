@@ -3,13 +3,29 @@
 #include "util.h"
 #include <stdio.h>
 
+typedef struct {
+    bool raw;
+} DisasmOptions;
+
 int main(int argc, char **argv) {
     printf("[REGULAR_ad] disassembler\n");
     if (argc < 2) {
-        printf("usage: disasm <in>\n");
+        printf("usage: disasm <in> --args\n");
     }
 
     char *in_file = argv[1];
+
+    DisasmOptions options = {
+        .raw = false,
+    };
+
+    for (int i = 2; i < argc; i++) {
+        char *flg = argv[i];
+        if (streq(flg, "--raw")) {
+            options.raw = true;
+            printf("enabling RAW dump mode\n");
+        }
+    }
 
     // open input file
     FILE *inf_fp = fopen(in_file, "rb");
@@ -24,7 +40,7 @@ int main(int argc, char **argv) {
     Program prg = decode_program(inf_read.content, inf_read.size);
     if (prg.status == 0) { // successful decode
         printf("== DUMP ==\n");
-        dump_program(prg);
+        dump_program(prg, !options.raw);
     }
 
     // clean up

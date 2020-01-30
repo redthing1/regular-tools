@@ -293,7 +293,7 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         populate_statement(&stmt); // interpret instruction type
 
         if (emu_st->debug) {
-            dump_statement(stmt); // dump statement
+            dump_statement(stmt, true); // dump statement
         }
         emu_exec(emu_st, stmt); // execute statement
         if (emu_st->debug) {
