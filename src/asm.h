@@ -235,7 +235,8 @@ void program_init(Program *p) {
 void parser_state_cleanup(ParserState *st) {
     // clean up labels
     while (!list_empty(st->labels)) {
-        list_pop(st->labels); // pop off remaining labels
+        Label* lb = (Label*) list_pop(st->labels); // pop off remaining labels
+        free(lb); // free label
     }
 }
 
