@@ -12,7 +12,9 @@ const size_t MEMORY_SIZE = 64 * 1024; // 65K
 const size_t REGISTER_COUNT = 32;
 const size_t SIMPLE_REGISTER_COUNT = 8;
 
-#define INTERRUPT_PAUSE 0x01
+#define INTERRUPT_PAUSE 0x01   // pause execution
+#define INTERRUPT_DUMPCPU 0x02 // dump cpu state
+#define INTERRUPT_DUMPMEM 0x03 // dump memory page
 
 typedef struct {
     UWORD *reg;
@@ -20,6 +22,7 @@ typedef struct {
     size_t mem_sz;
     bool executing;
     uint64_t ticks;
+    bool debug;
     bool onestep; // step one at a time
 } EmulatorState;
 
@@ -40,6 +43,7 @@ EmulatorState *emu_init() {
     emu_st->reg[REG_RSP] = emu_st->mem_sz - sizeof(WORD);
 
     // reset settings
+    emu_st->debug = false;
     emu_st->onestep = 0;
     emu_st->ticks = 0;
 
@@ -67,27 +71,40 @@ void dump_rg(EmulatorState *emu_st, ARG rg) {
 /**
  * Dump the emulator state for debugging
  */
-void emu_dump(EmulatorState *emu_st) {
+void emu_dump(EmulatorState *emu_st, bool full) {
     printf("== STATE ==\n");
+    size_t dump_regs = SIMPLE_REGISTER_COUNT;
+    if (full) {
+        dump_regs = REGISTER_COUNT;
+    }
     // dump main registers
-    for (ARG i = 0; i < SIMPLE_REGISTER_COUNT; i++) {
+    for (ARG i = 0; i < dump_regs; i++) {
         dump_rg(emu_st, i);
     }
-    // dump special registers
-    dump_rg(emu_st, REG_RAD);
-    dump_rg(emu_st, REG_RAT);
-    dump_rg(emu_st, REG_RSP);
+    if (!full) { // dump special registers even in a small dump
+        dump_rg(emu_st, REG_RAD);
+        dump_rg(emu_st, REG_RAT);
+        dump_rg(emu_st, REG_RSP);
+    }
 }
 
 /**
  * Handle interrupts in emulator
  */
-void emu_interrupt(UWORD interrupt) {
+void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
     printf("--INT: $%08x: ", interrupt);
     switch (interrupt) {
     case INTERRUPT_PAUSE: {
         printf("PAUSE");
         util_pause();
+        break;
+    }
+    case INTERRUPT_DUMPCPU: {
+        emu_dump(emu_st, true);
+        break;
+    }
+    case INTERRUPT_DUMPMEM: {
+        // TODO: dump current memory page
         break;
     }
     default: {
@@ -193,7 +210,7 @@ void emu_exec(EmulatorState *emu_st, Statement in) {
     }
     case OP_INT: {
         UWORD interrupt = emu_st->reg[in.a1];
-        emu_interrupt(interrupt);
+        emu_interrupt(emu_st, interrupt);
         break;
     }
     case OP_HLT: {
@@ -229,10 +246,14 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
         populate_statement(&stmt); // interpret instruction type
 
-        dump_statement(stmt);   // dump statement
+        if (emu_st->debug) {
+            dump_statement(stmt); // dump statement
+        }
         emu_exec(emu_st, stmt); // execute statement
-        emu_dump(emu_st);       // dump state
-        
+        if (emu_st->debug) {
+            emu_dump(emu_st, false); // dump abbrev. state
+        }
+
         emu_st->ticks++;
         if (emu_st->onestep) {
             util_pause();
