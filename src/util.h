@@ -88,3 +88,14 @@ uint8_t *datahex(char *str) {
 
     return data;
 }
+
+void reverse_bytes(uint8_t *start, int size) {
+    uint8_t *lo = start;
+    uint8_t *hi = start + size - 1;
+    uint8_t swap;
+    while (lo < hi) {
+        swap = *lo;
+        *lo++ = *hi;
+        *hi-- = swap;
+    }
+}

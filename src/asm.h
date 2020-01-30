@@ -431,7 +431,8 @@ Program parse(LexResult lexed) {
                     printf("ERROR: invalid data (must be even)");
                 }
                 pack_len = pack_len / 2; // divide by two because 0xff = 1 byte
-                BYTE *pack_data = datahex(pack.cont);
+                BYTE *pack_data = datahex(pack.cont); // convert data from hex
+                reverse_bytes(pack_data, pack_len); // flip data (for endianness)
                 // write the pack data to the binary
                 if (!prg.data) {
                     prg.data = malloc(sizeof(BYTE) * pack_len);
