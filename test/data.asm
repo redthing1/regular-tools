@@ -3,7 +3,7 @@
 #entry :main
 
 data:
-    #d \ff
+    #d \ffddaa22
 
 main:
     set r2 ::data

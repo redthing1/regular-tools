@@ -22,9 +22,11 @@ typedef enum {
     NUM_SPECIAL = 1 << 5,      // '$'
     DIRECTIVE_PREFIX = 1 << 6, // '#'
     NUMERIC_HEX = 1 << 7,      // beef
+    PACK_START = 1 << 8,      // '\'
     IDENTIFIER = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
     NUMERIC_CONSTANT = NUMERIC | NUMERIC_HEX | NUM_SPECIAL,
+    PACK = NUMERIC | NUMERIC_HEX,
 } CharType;
 
 typedef struct {
@@ -55,6 +57,8 @@ CharType classify_char(char c) {
         return MARK;
     case '#':
         return DIRECTIVE_PREFIX;
+    case '\\':
+        return PACK_START;
     case '$':
     case '.':
         return NUM_SPECIAL;
@@ -162,6 +166,12 @@ LexResult lex(char *buf, size_t buf_sz) {
         } else if ((c_type & NUM_SPECIAL) > 0) {
             take_chars(&st, working, NUMERIC_CONSTANT);
             Token tok = {.kind = NUMERIC_CONSTANT, .cont = working};
+            tokens[token_count++] = tok;
+        } else if ((c_type & PACK_START) > 0) {
+            take_char(&st); // eat pack start
+            // hex data after start indicator
+            take_chars(&st, working, PACK);
+            Token tok = {.kind = PACK, .cont = working};
             tokens[token_count++] = tok;
         } else if ((c_type & DIRECTIVE_PREFIX) > 0) {
             take_chars(&st, working, DIRECTIVE);
@@ -390,14 +400,25 @@ Program parse(LexResult lexed) {
         Token next = peek_token(&st);
         switch (next.kind) {
         case DIRECTIVE: { // handle directive
-            Token tok = take_token(&st);
+            Token dir = take_token(&st);
             // check if it is the "#entry" directive
-            if (streq(tok.cont, "#entry")) {
+            if (streq(dir.cont, "#entry")) {
                 // following label has the entry point
                 expect_token(&st, MARK);
                 Token lbl = expect_token(&st, IDENTIFIER);
                 // store entry label
                 entry_lbl = lbl.cont;
+            } else if (streq(dir.cont, "#d")) { // data directive
+                Token pack = expect_token(&st, PACK);
+                size_t pack_len = strlen(pack.cont);
+                if (pack_len % 2 != 0) {
+                    // odd number of half-bytes, invalid
+                    printf("ERROR: invalid data (must be even)");
+                }
+                BYTE *pack_data = datahex(pack.cont);
+                // write the pack data to the binary
+                // update offset
+                st.offset += pack_len;
             }
             break;
         }
