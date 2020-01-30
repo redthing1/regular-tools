@@ -17,7 +17,5 @@ main:
     psh r1
     set r4 ::sub
     cal r4
-    ; return is at [sp-4]
-    pop at ; pop the return address
     pop r1 ; pop arg1
     hlt
