@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 typedef struct {
-    bool write_header;
+    bool compat;
 } AssemblerOptions;
 
 int main(int argc, char **argv) {
@@ -16,13 +16,14 @@ int main(int argc, char **argv) {
     char *out_file = argv[2];
 
     AssemblerOptions options = {
-        .write_header = true,
+        .compat = false,
     };
 
     for (int i = 3; i < argc; i++) {
         char *flg = argv[i];
-        if (streq(flg, "--bare")) {
-            options.write_header = false;
+        if (streq(flg, "--compat")) {
+            options.compat = true;
+            printf("enabling compatibility mode\n");
         }
     }
 
@@ -75,7 +76,7 @@ int main(int argc, char **argv) {
     dump_program(prg_out);
     // write out the program to binary
     printf("== WRITE ==\n");
-    write_program(ouf_fp, prg_out, options.write_header);
+    write_program(ouf_fp, prg_out, options.compat);
 
     // clean up
     free(inf_read.content);

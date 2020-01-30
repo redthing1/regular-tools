@@ -236,8 +236,8 @@ void program_init(Program *p) {
 void parser_state_cleanup(ParserState *st) {
     // clean up labels
     while (!list_empty(st->labels)) {
-        Label* lb = (Label*) list_pop(st->labels); // pop off remaining labels
-        free(lb); // free label
+        Label *lb = (Label *)list_pop(st->labels); // pop off remaining labels
+        free(lb);                                  // free label
     }
 }
 
@@ -434,9 +434,9 @@ Program parse(LexResult lexed) {
                     // odd number of half-bytes, invalid
                     printf("ERROR: invalid data (must be even)");
                 }
-                pack_len = pack_len / 2; // divide by two because 0xff = 1 byte
+                pack_len = pack_len / 2;              // divide by two because 0xff = 1 byte
                 BYTE *pack_data = datahex(pack.cont); // convert data from hex
-                reverse_bytes(pack_data, pack_len); // flip data (for endianness)
+                reverse_bytes(pack_data, pack_len);   // flip data (for endianness)
                 // write the pack data to the binary
                 if (!prg.data) {
                     prg.data = malloc(sizeof(BYTE) * pack_len);
@@ -524,10 +524,32 @@ void free_program(Program prg, bool free_data) {
 
 #define HEADER_SIZE 8
 
-void write_program(FILE *ouf, Program prg, bool write_header) {
+void write_short(FILE* ouf, uint8_t v) {
+    char w0 = (v >> 0) & 0xff;
+    char w1 = (v >> 8) & 0xff;
+    fwrite(&w0, sizeof(w0), 1, ouf);
+    fwrite(&w1, sizeof(w1), 1, ouf);
+}
+
+void write_statement(FILE *ouf, Statement *st) {
     char w = '\0';
-    if (write_header) {
-        // write header
+    // write binary statement data
+    w = st->opcode;
+    fwrite(&w, sizeof(w), 1, ouf);
+    // write binary args
+    w = st->a1;
+    fwrite(&w, sizeof(w), 1, ouf);
+    w = st->a2;
+    fwrite(&w, sizeof(w), 1, ouf);
+    w = st->a3;
+    fwrite(&w, sizeof(w), 1, ouf);
+}
+
+void write_program(FILE *ouf, Program prg, bool compat) {
+    char w = '\0';
+    if (compat) {
+        printf("[COMPAT] on\n");
+    } else { // write header
         const char *REG = "rg";
         fputs(REG, ouf);                               // magic
         fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
@@ -535,8 +557,6 @@ void write_program(FILE *ouf, Program prg, bool write_header) {
         fwrite(&code_size, sizeof(code_size), 1, ouf);         // code size
         fwrite(&prg.data_size, sizeof(prg.data_size), 1, ouf); // data size
         printf("header[%d] \n", HEADER_SIZE);
-    } else {
-        printf("--bare given, not writing header\n");
     }
 
     // write data
@@ -550,18 +570,22 @@ void write_program(FILE *ouf, Program prg, bool write_header) {
 
     // write code
     size_t code_offset = 0;
+
+    // if bare/compat mode, write a jmp to the entrypoint
+    // TODO: this currently breaks all offsets
+    // if (compat) {
+    //     UWORD jmp_trg = INSTR_SIZE + prg.entry;
+    //     printf("[COMPAT] inserting entrypoint jump to $%04x\n", jmp_trg);
+    //     Statement jmp = {.opcode = OP_SET, .a1 = REG_RPC, .a2 = jmp_trg, .a3 = 0};
+    //     populate_statement(&jmp);
+    //     write_statement(ouf, &jmp);
+    //     code_offset += jmp.sz;
+    // }
+
+    // write statements
     for (int i = 0; i < prg.statement_count; i++) {
         Statement st = prg.statements[i];
-        // write binary opcode
-        w = st.opcode;
-        fwrite(&w, sizeof(w), 1, ouf);
-        // write binary args
-        w = st.a1;
-        fwrite(&w, sizeof(w), 1, ouf);
-        w = st.a2;
-        fwrite(&w, sizeof(w), 1, ouf);
-        w = st.a3;
-        fwrite(&w, sizeof(w), 1, ouf);
+        write_statement(ouf, &st);
         code_offset += st.sz;
     }
     printf("code[%d] \n", (int)code_offset);

@@ -29,8 +29,14 @@ RGHeader decode_header(char *buf, size_t buf_sz) {
     hd.valid_magic = (buf[0] == 'r') && (buf[1] == 'g');
     if (hd.valid_magic) {
         hd.entry = buf[2] | (buf[3] << 8);
-        hd.code_size = buf[4] | (buf[5] << 8);
-        hd.data_size = buf[6] | (buf[7] << 8);
+        uint8_t code_size_l = buf[4];
+        uint8_t code_size_h = buf[5];
+        hd.code_size = code_size_l | (code_size_h << 8);
+        // hd.code_size = buf[4] | (buf[5] << 8);
+        uint8_t data_size_l = buf[6];
+        uint8_t data_size_h = buf[7];
+        hd.data_size = data_size_l | (data_size_h << 8);
+        // hd.data_size = buf[6] | (buf[7] << 8);
         hd.decode_offset = HEADER_SIZE; // start after header
     } else {
         printf("WARN: magic header not matched. reading as bare binary.\n");
