@@ -114,23 +114,26 @@ void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
     printf("--INT: $%08x-- \n", interrupt);
     switch (interrupt) {
     case INTERRUPT_PAUSE: {
-        printf("PAUSE");
+        printf("-- PAUSE --\n");
         size_t pause_bufsize = 256;
         char pause_buf[pause_bufsize];
         util_getln(pause_buf, pause_bufsize);
         break;
     }
     case INTERRUPT_DUMPCPU: {
+        printf("-- CPU --\n");
         emu_dump(emu_st, true);
         break;
     }
     case INTERRUPT_DUMPMEM: {
+        printf("-- MEM --\n");
         // TODO: dump current memory page
+        printf("mem dump not yet implemented.\n");
         break;
     }
     case INTERRUPT_DUMPSTK: {
         // dump stack
-        printf("-- STACK --\n");
+        printf("-- STK --\n");
         UWORD sp = emu_st->reg[REG_RSP];
         for (UWORD addr = sp; addr < emu_st->mem_sz; addr += sizeof(UWORD)) {
             UWORD data = emu_st->mem[addr + 0] << 0 | emu_st->mem[addr + 1] << 8 | emu_st->mem[addr + 2] << 16 |
@@ -266,6 +269,11 @@ void emu_exec(EmulatorState *emu_st, Statement in) {
 
 /* #endregion */
 
+#define CMD_INTERRUPT(cmd, intr)                                                                                       \
+    else if (streq(cmd_buf, #cmd)) {                                                                                   \
+        emu_interrupt(emu_st, intr);                                                                                   \
+    }
+
 /**
  * Start emulator execution at an entry point in memory
  */
@@ -293,11 +301,22 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         }
 
         emu_st->ticks++;
-        if (emu_st->onestep) {
+        bool paused = true;
+        while (emu_st->onestep && paused) {
             // TODO: execute commands
             size_t cmd_bufsize = 256;
             char cmd_buf[cmd_bufsize];
             util_getln(cmd_buf, cmd_bufsize);
+            cmd_buf[strlen(cmd_buf) - 1] = '\0'; // remove newline
+            if (streq(cmd_buf, "s") || strlen(cmd_buf) == 0) {
+                paused = false;
+            }
+            CMD_INTERRUPT(cpu, INTERRUPT_DUMPCPU)
+            CMD_INTERRUPT(mem, INTERRUPT_DUMPMEM)
+            CMD_INTERRUPT(stk, INTERRUPT_DUMPSTK)
+            else {
+                printf("unknown command\n");
+            }
         }
     }
 }
