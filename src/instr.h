@@ -168,6 +168,10 @@ InstructionInfo get_instruction_info(char *mnem) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R, .opcode = OP_PSH};
     } else if (streq(mnem, "pop")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R, .opcode = OP_POP};
+    } else if (streq(mnem, "cal")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 6, .type = INSTR_OP_R, .opcode = OP_CAL};
+    } else if (streq(mnem, "ret")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 4, .type = INSTR_OP, .opcode = OP_RET};
     } else if (streq(mnem, "swp")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
     } else {
@@ -226,6 +230,10 @@ const char *get_instruction_mnem(OPCODE op) {
         return "psh";
     case OP_POP:
         return "pop";
+    case OP_CAL:
+        return "cal";
+    case OP_RET:
+        return "ret";
     case OP_SWP:
         return "swp";
     default:
@@ -237,6 +245,8 @@ const char *get_instruction_mnem(OPCODE op) {
 ARG get_register(char *mnem) {
     if (streq(mnem, "rX")) {
         return REG_RXX;
+    } else if (streq(mnem, "pc")) {
+        return REG_RPC;
     } else if (streq(mnem, "r1")) {
         return REG_R01;
     } else if (streq(mnem, "r2")) {
@@ -267,6 +277,10 @@ ARG get_register(char *mnem) {
         return REG_R14;
     } else if (streq(mnem, "r15")) {
         return REG_R15;
+    } else if (streq(mnem, "at")) {
+        return REG_RAT;
+    } else if (streq(mnem, "sp")) {
+        return REG_RSP;
     }
     // unrecognized mnem
     return REG_RXX;
