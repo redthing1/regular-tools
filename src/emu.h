@@ -15,6 +15,7 @@ const size_t SIMPLE_REGISTER_COUNT = 8;
 #define INTERRUPT_PAUSE 0x01   // pause execution
 #define INTERRUPT_DUMPCPU 0x02 // dump cpu state
 #define INTERRUPT_DUMPMEM 0x03 // dump memory page
+#define INTERRUPT_DUMPSTK 0x04 // dump stack
 
 typedef struct {
     UWORD *reg;
@@ -92,7 +93,7 @@ void emu_dump(EmulatorState *emu_st, bool full) {
  * Handle interrupts in emulator
  */
 void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
-    printf("--INT: $%08x: ", interrupt);
+    printf("--INT: $%08x-- \n", interrupt);
     switch (interrupt) {
     case INTERRUPT_PAUSE: {
         printf("PAUSE");
@@ -105,6 +106,17 @@ void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
     }
     case INTERRUPT_DUMPMEM: {
         // TODO: dump current memory page
+        break;
+    }
+    case INTERRUPT_DUMPSTK: {
+        // dump stack
+        printf("-- STACK --\n");
+        UWORD sp = emu_st->reg[REG_RSP];
+        for (UWORD addr = sp; addr < emu_st->mem_sz; addr += sizeof(UWORD)) {
+            UWORD data = emu_st->mem[addr + 0] << 0 | emu_st->mem[addr + 1] << 8 | emu_st->mem[addr + 2] << 16 |
+                         emu_st->mem[addr + 3] << 24;
+            printf(" %0x", data);
+        }
         break;
     }
     default: {
