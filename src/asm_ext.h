@@ -89,7 +89,7 @@ Program compile_pseudo(Program inp) {
                 set at imm
                 add rA rA at
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = in.a1, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = in.a2, .a3 = 0};
             Statement cmp2 = {.opcode = OP_ADD, .a1 = in.a1, .a2 = in.a1, .a3 = REG_RAT};
             populate_statement(&cmp1);
             populate_statement(&cmp2);
@@ -104,7 +104,7 @@ Program compile_pseudo(Program inp) {
                 set at imm
                 sub rA rA at
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = in.a1, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = in.a2, .a3 = 0};
             Statement cmp2 = {.opcode = OP_SUB, .a1 = in.a1, .a2 = in.a1, .a3 = REG_RAT};
             populate_statement(&cmp1);
             populate_statement(&cmp2);
