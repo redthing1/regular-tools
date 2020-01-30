@@ -170,10 +170,10 @@ Program compile_pseudo(Program inp) {
             // compile to pop pc to ad then mov
             /*
                 pop ad
-                mov pc ad
+                jmp ad
             */
             Statement cmp1 = {.opcode = OP_POP, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
-            Statement cmp2 = {.opcode = OP_MOV, .a1 = REG_RPC, .a2 = REG_RAD, .a3 = 0};
+            Statement cmp2 = {.opcode = OP_JMP, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
             populate_statement(&cmp1);
             populate_statement(&cmp2);
             new_statements[new_statement_count++] = cmp1;
