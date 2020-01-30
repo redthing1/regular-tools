@@ -171,7 +171,7 @@ InstructionInfo get_instruction_info(char *mnem) {
     } else if (streq(mnem, "cal")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 6, .type = INSTR_OP_R, .opcode = OP_CAL};
     } else if (streq(mnem, "ret")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP, .opcode = OP_RET};
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 4, .type = INSTR_OP, .opcode = OP_RET};
     } else if (streq(mnem, "swp")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
     } else {

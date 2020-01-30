@@ -137,13 +137,17 @@ Program compile_pseudo(Program inp) {
         }
         case OP_RET: {
             // ret
-            // compile to push pc then jmp to addr
+            // compile to pop pc to ad then mov
             /*
-                pop pc
+                pop ad
+                mov pc ad
             */
-            Statement cmp1 = {.opcode = OP_POP, .a1 = REG_RPC, .a2 = 0, .a3 = 0};
+            Statement cmp1 = {.opcode = OP_POP, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
+            Statement cmp2 = {.opcode = OP_MOV, .a1 = REG_RPC, .a2 = REG_RAD, .a3 = 0};
             populate_statement(&cmp1);
+            populate_statement(&cmp2);
             new_statements[new_statement_count++] = cmp1;
+            new_statements[new_statement_count++] = cmp2;
             break;
             break;
         }
