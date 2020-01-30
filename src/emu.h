@@ -12,6 +12,8 @@ const size_t MEMORY_SIZE = 64 * 1024; // 65K
 const size_t REGISTER_COUNT = 32;
 const size_t SIMPLE_REGISTER_COUNT = 8;
 
+#define INTERRUPT_PAUSE 0x01
+
 typedef struct {
     UWORD *reg;
     BYTE *mem;
@@ -68,6 +70,27 @@ void emu_dump(EmulatorState *emu_st) {
     // dump special registers
     dump_rg(emu_st, REG_RSP);
     dump_rg(emu_st, REG_RAT);
+}
+
+/**
+ * Handle interrupts in emulator
+ */
+void emu_interrupt(UWORD interrupt) {
+    printf("--INT: $%08x: ", interrupt);
+    switch (interrupt) {
+    case INTERRUPT_PAUSE: {
+        printf("PAUSE");
+        size_t pause_bufsize = 256;
+        char pause_buf[pause_bufsize];
+        fgets(pause_buf, pause_bufsize, stdin);
+        break;
+    }
+    default: {
+        printf("UNKNOWN");
+        break;
+    }
+    }
+    printf("\n");
 }
 
 /**
@@ -164,7 +187,8 @@ void emu_exec(EmulatorState *emu_st, Statement in) {
         break;
     }
     case OP_INT: {
-        printf("--INT: $%08x\n", emu_st->reg[in.a1]);
+        UWORD interrupt = emu_st->reg[in.a1];
+        emu_interrupt(interrupt);
         break;
     }
     case OP_HLT: {
