@@ -31,8 +31,10 @@ Program compile_pseudo(Program inp) {
 
     while (pas.pos < inp.statement_count) {
         if (new_statement_count > statement_buf_size - 1) {
-            // out of space
-            printf("ERROR: out of statement space\n");
+            // out of space, make more
+            statement_buf_size *= 2;
+            new_statements = realloc(new_statements, statement_buf_size * sizeof(Statement));
+            printf("reallocating new_statements[]\n");
             return prg;
         }
         Statement in = take_statement(&pas);

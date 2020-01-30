@@ -411,7 +411,9 @@ Program parse(LexResult lexed) {
     while (st.token < lexed.token_count) {
         // TODO: check to reallocate statements
         if (statement_count > statement_buf_size - 1) {
-            printf("ERROR: out of statement space\n");
+            statement_buf_size *= 2;
+            statements = realloc(statements, statement_buf_size * sizeof(Statement));
+            printf("reallocating statements[]\n");
             return prg;
         }
         Token next = peek_token(&st);
