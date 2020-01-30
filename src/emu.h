@@ -27,6 +27,8 @@ typedef struct {
     bool onestep; // step one at a time
 } EmulatorState;
 
+/* #region Init, Deinit, and Loading */
+
 EmulatorState *emu_init() {
     EmulatorState *emu_st = malloc(sizeof(EmulatorState));
     emu_st->mem_sz = MEMORY_SIZE;
@@ -51,6 +53,14 @@ EmulatorState *emu_init() {
     return emu_st;
 }
 
+void emu_free(EmulatorState *emu_st) {
+    // free data
+    free(emu_st->reg);
+    free(emu_st->mem);
+    // free emu emu_state
+    free(emu_st);
+}
+
 /**
  * Load the program data into memory
  */
@@ -63,6 +73,10 @@ RGHeader emu_load(EmulatorState *emu_st, int offset, char *program, size_t progr
     memcpy(emu_st->mem + offset, program + hd.decode_offset, copy_sz);
     return hd;
 }
+
+/* #endregion */
+
+/* #region Dumping */
 
 void dump_rg(EmulatorState *emu_st, ARG rg) {
     const char *reg_name = get_register_name(rg);
@@ -88,6 +102,10 @@ void emu_dump(EmulatorState *emu_st, bool full) {
         dump_rg(emu_st, REG_RSP);
     }
 }
+
+/* #endregion */
+
+/* #region Interrupt Handling */
 
 /**
  * Handle interrupts in emulator
@@ -128,6 +146,10 @@ void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
     }
     printf("\n");
 }
+
+/* #endregion */
+
+/* #region Instruction Execution */
 
 /**
  * Execute an instruction in the emulator
@@ -242,6 +264,8 @@ void emu_exec(EmulatorState *emu_st, Statement in) {
     }
 }
 
+/* #endregion */
+
 /**
  * Start emulator execution at an entry point in memory
  */
@@ -276,12 +300,4 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
             util_getln(cmd_buf, cmd_bufsize);
         }
     }
-}
-
-void emu_free(EmulatorState *emu_st) {
-    // free data
-    free(emu_st->reg);
-    free(emu_st->mem);
-    // free emu emu_state
-    free(emu_st);
 }
