@@ -85,17 +85,17 @@ typedef struct {
 #define OP_SBI 0xb2
 
 // registers
-#define REG_RXX 0x70
+#define REG_RX 0xff
 #define REG_RPC 0x00
-#define REG_R01 0x01
-#define REG_R02 0x02
-#define REG_R03 0x03
-#define REG_R04 0x04
-#define REG_R05 0x05
-#define REG_R06 0x06
-#define REG_R07 0x07
-#define REG_R08 0x08
-#define REG_R09 0x09
+#define REG_R1 0x01
+#define REG_R2 0x02
+#define REG_R3 0x03
+#define REG_R4 0x04
+#define REG_R5 0x05
+#define REG_R6 0x06
+#define REG_R7 0x07
+#define REG_R8 0x08
+#define REG_R9 0x09
 #define REG_R10 0x0a
 #define REG_R11 0x0b
 #define REG_R12 0x0c
@@ -252,74 +252,93 @@ const char *get_instruction_mnem(OPCODE op) {
     }
 }
 
+#define REG(num) REG_R##num
+#define REG_STREQ(num)                                                                                                 \
+    else if (streq(mnem, "r" #num)) {                                                                                  \
+        return REG(num);                                                                                               \
+    }
+
 ARG get_register(char *mnem) {
-    if (streq(mnem, "rX")) {
-        return REG_RXX;
-    } else if (streq(mnem, "pc")) {
+    if (streq(mnem, "pc")) {
         return REG_RPC;
-    } else if (streq(mnem, "r1")) {
-        return REG_R01;
-    } else if (streq(mnem, "r2")) {
-        return REG_R02;
-    } else if (streq(mnem, "r3")) {
-        return REG_R03;
-    } else if (streq(mnem, "r4")) {
-        return REG_R04;
-    } else if (streq(mnem, "r5")) {
-        return REG_R05;
-    } else if (streq(mnem, "r6")) {
-        return REG_R06;
-    } else if (streq(mnem, "r7")) {
-        return REG_R07;
-    } else if (streq(mnem, "r8")) {
-        return REG_R08;
-    } else if (streq(mnem, "r9")) {
-        return REG_R09;
-    } else if (streq(mnem, "r10")) {
-        return REG_R10;
-    } else if (streq(mnem, "r11")) {
-        return REG_R11;
-    } else if (streq(mnem, "r12")) {
-        return REG_R12;
-    } else if (streq(mnem, "r13")) {
-        return REG_R13;
-    } else if (streq(mnem, "r14")) {
-        return REG_R14;
-    } else if (streq(mnem, "r15")) {
-        return REG_R15;
-    } else if (streq(mnem, "r29") || streq(mnem, "ad")) {
+    }
+    REG_STREQ(1)
+    REG_STREQ(2)
+    REG_STREQ(3)
+    REG_STREQ(4)
+    REG_STREQ(5)
+    REG_STREQ(6)
+    REG_STREQ(7)
+    REG_STREQ(8)
+    REG_STREQ(9)
+    REG_STREQ(10)
+    REG_STREQ(11)
+    REG_STREQ(12)
+    REG_STREQ(13)
+    REG_STREQ(14)
+    REG_STREQ(15)
+    REG_STREQ(16)
+    REG_STREQ(17)
+    REG_STREQ(18)
+    REG_STREQ(19)
+    REG_STREQ(20)
+    REG_STREQ(21)
+    REG_STREQ(22)
+    REG_STREQ(24)
+    REG_STREQ(25)
+    REG_STREQ(26)
+    REG_STREQ(27)
+    REG_STREQ(28)
+    else if (streq(mnem, "r29") || streq(mnem, "ad")) {
         return REG_RAT;
-    } else if (streq(mnem, "at")) {
+    }
+    else if (streq(mnem, "at")) {
         return REG_RAT;
-    } else if (streq(mnem, "sp")) {
+    }
+    else if (streq(mnem, "sp")) {
         return REG_RSP;
     }
     // unrecognized mnem
-    return REG_RXX;
+    return REG_RX;
 }
+
+#define REG_NAMECASE(num)                                                                                              \
+    case REG(num):                                                                                                     \
+        return "r" #num;
 
 const char *get_register_name(ARG reg) {
     switch (reg) {
-    case REG_RXX:
-        return "rX";
+        REG_NAMECASE(X);
     case REG_RPC:
         return "pc";
-    case REG_R01:
-        return "r1";
-    case REG_R02:
-        return "r2";
-    case REG_R03:
-        return "r3";
-    case REG_R04:
-        return "r4";
-    case REG_R05:
-        return "r5";
-    case REG_R06:
-        return "r6";
-    case REG_R07:
-        return "r7";
-    case REG_R08:
-        return "r8";
+    REG_NAMECASE(1);
+    REG_NAMECASE(2);
+    REG_NAMECASE(3);
+    REG_NAMECASE(4);
+    REG_NAMECASE(5);
+    REG_NAMECASE(6);
+    REG_NAMECASE(7);
+    REG_NAMECASE(8);
+    REG_NAMECASE(9);
+    REG_NAMECASE(10);
+    REG_NAMECASE(11);
+    REG_NAMECASE(12);
+    REG_NAMECASE(13);
+    REG_NAMECASE(14);
+    REG_NAMECASE(15);
+    REG_NAMECASE(16);
+    REG_NAMECASE(17);
+    REG_NAMECASE(18);
+    REG_NAMECASE(19);
+    REG_NAMECASE(20);
+    REG_NAMECASE(21);
+    REG_NAMECASE(22);
+    REG_NAMECASE(23);
+    REG_NAMECASE(24);
+    REG_NAMECASE(25);
+    REG_NAMECASE(26);
+    REG_NAMECASE(27);
+    REG_NAMECASE(28);
     case REG_RAD:
         return "ad";
     case REG_RAT:
