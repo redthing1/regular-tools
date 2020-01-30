@@ -81,6 +81,8 @@ typedef struct {
 #define OP_CAL 0xa4
 #define OP_RET 0xa5
 #define OP_SWP 0xb0
+#define OP_ADI 0xb1
+#define OP_SBI 0xb2
 
 // registers
 #define REG_RXX 0x70
@@ -174,6 +176,10 @@ InstructionInfo get_instruction_info(char *mnem) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 4, .type = INSTR_OP, .opcode = OP_RET};
     } else if (streq(mnem, "swp")) {
         return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
+    } else if (streq(mnem, "adi")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R_I, .opcode = OP_ADI};
+    } else if (streq(mnem, "sbi")) {
+        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R_I, .opcode = OP_SBI};
     } else {
         // unrecognized mnem
         return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};
@@ -236,6 +242,10 @@ const char *get_instruction_mnem(OPCODE op) {
         return "ret";
     case OP_SWP:
         return "swp";
+    case OP_ADI:
+        return "adi";
+    case OP_SBI:
+        return "sbi";
     default:
         return NULL; // unrecognized mnemonic
         break;
