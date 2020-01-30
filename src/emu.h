@@ -270,7 +270,10 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
 
         emu_st->ticks++;
         if (emu_st->onestep) {
-            util_getln();
+            // TODO: execute commands
+            size_t cmd_bufsize = 256;
+            char cmd_buf[cmd_bufsize];
+            util_getln(cmd_buf, cmd_bufsize);
         }
     }
 }
