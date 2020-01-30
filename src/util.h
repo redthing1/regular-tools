@@ -45,10 +45,8 @@ int convert_dec_to(int val, int base) {
     return (val % base) + 10 * convert_dec_to(val / base, base);
 }
 
-void util_pause() {
-    size_t pause_bufsize = 256;
-    char pause_buf[pause_bufsize];
-    fgets(pause_buf, pause_bufsize, stdin);
+void util_getln(char* buf, int n) {
+    fgets(buf, n, stdin);
 }
 
 // https://stackoverflow.com/questions/3408706/hexadecimal-string-to-byte-array-in-c/35452093#35452093

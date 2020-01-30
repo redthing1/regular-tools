@@ -97,7 +97,9 @@ void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
     switch (interrupt) {
     case INTERRUPT_PAUSE: {
         printf("PAUSE");
-        util_pause();
+        size_t pause_bufsize = 256;
+        char pause_buf[pause_bufsize];
+        util_getln(pause_buf, pause_bufsize);
         break;
     }
     case INTERRUPT_DUMPCPU: {
@@ -268,7 +270,7 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
 
         emu_st->ticks++;
         if (emu_st->onestep) {
-            util_pause();
+            util_getln();
         }
     }
 }
