@@ -257,8 +257,8 @@ void emu_exec(EmulatorState *emu_st, Statement in) {
         break;
     }
     case OP_BRX: {
-        if (emu_st->reg[in.a1] > 0) {
-            emu_st->reg[REG_RPC] = emu_st->reg[in.a2];
+        if (emu_st->reg[in.a2] > 0) {
+            emu_st->reg[REG_RPC] = emu_st->reg[in.a1];
         }
         break;
     }
