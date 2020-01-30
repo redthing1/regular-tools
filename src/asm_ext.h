@@ -23,6 +23,8 @@ Program compile_pseudo(Program inp) {
     program_init(&prg);
     prg.statements = new_statements;
     prg.entry = inp.entry;
+    prg.data = inp.data;
+    prg.data_size = inp.data_size;
     PseudoAssemblerState pas = {.pos = 0, .src = &inp};
 
     // TODO: handle offset padding for larger compiles

@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 
     // clean up
     free(inf_read.content);
-    free_program(prg);
+    free_program(prg, true);
 
     return 0;
 }

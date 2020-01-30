@@ -67,8 +67,8 @@ int main(int argc, char **argv) {
     // compile pseudo-instructions - pass 1
     Program prg_pass1 = compile_pseudo(prg_hl);
     Program prg_out = compile_pseudo(prg_pass1);
-    free_program(prg_hl);
-    free_program(prg_pass1);
+    free_program(prg_hl, false);
+    free_program(prg_pass1, false);
     
     // dump the finished program
     printf("== DUMP [fin] ==\n");
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     // clean up
     free(inf_read.content);
     free_lex_result(lex_result);
-    free_program(prg_out);
+    free_program(prg_out, true);
 
     fclose(ouf_fp); // close output file
 

@@ -18,6 +18,7 @@ typedef struct {
     bool valid_magic;
     uint16_t entry;
     uint16_t code_size;
+    uint16_t data_size;
     size_t decode_offset;
 } RGHeader;
 
@@ -29,7 +30,8 @@ RGHeader decode_header(char *buf, size_t buf_sz) {
     if (hd.valid_magic) {
         hd.entry = buf[2] | (buf[3] << 8);
         hd.code_size = buf[4] | (buf[5] << 8);
-        hd.decode_offset = 6; // start after header
+        hd.data_size = buf[6] | (buf[7] << 8);
+        hd.decode_offset = HEADER_SIZE; // start after header
     } else {
         printf("WARN: magic header not matched. reading as bare binary.\n");
         // set default values
@@ -42,6 +44,7 @@ RGHeader decode_header(char *buf, size_t buf_sz) {
 void dump_header(RGHeader hd) {
     printf("entry:     $%04x\n", hd.entry);
     printf("code size: $%04x\n", hd.code_size);
+    printf("data size: $%04x\n", hd.data_size);
 }
 
 Program decode_program(char *buf, size_t buf_sz) {
@@ -53,6 +56,7 @@ Program decode_program(char *buf, size_t buf_sz) {
     int statement_count = 0;
     Program prg;
     program_init(&prg);
+    prg.data_size = hd.data_size;
     prg.statements = statements;
     prg.entry = hd.entry;
     // check size multiple
@@ -63,7 +67,7 @@ Program decode_program(char *buf, size_t buf_sz) {
         return prg;
     }
 
-    size_t code_end = hd.decode_offset + hd.code_size;
+    size_t code_end = hd.decode_offset + hd.data_size + hd.code_size;
     while (st.pos < code_end) {
         ARG op = take_arg(&st);
         ARG a1 = take_arg(&st);

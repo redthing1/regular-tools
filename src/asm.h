@@ -22,7 +22,7 @@ typedef enum {
     NUM_SPECIAL = 1 << 5,      // '$'
     DIRECTIVE_PREFIX = 1 << 6, // '#'
     NUMERIC_HEX = 1 << 7,      // beef
-    PACK_START = 1 << 8,      // '\'
+    PACK_START = 1 << 8,       // '\'
     IDENTIFIER = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
     NUMERIC_CONSTANT = NUMERIC | NUMERIC_HEX | NUM_SPECIAL,
@@ -206,15 +206,15 @@ typedef struct {
     int statement_count;
     uint16_t entry;
     int status;
-    BYTE* data;
-    size_t data_size;
+    BYTE *data;
+    uint16_t data_size;
 } Program;
 
 typedef struct {
     LexResult *lexed;
-    int token;     // token index
-    int cpos;      // char position of reading
-    int offset;    // binary output position
+    int token;    // token index
+    int cpos;     // char position of reading
+    int offset;   // binary output position
     List *labels; // label list
 } ParserState;
 
@@ -266,7 +266,7 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
-void parse_label_ref(ParserState *st, Token mark, char* prev) {
+void parse_label_ref(ParserState *st, Token mark, char *prev) {
     // check if it's a double tok
     if (strlen(mark.cont) > 1) { // check if :: instead of :
         // this is a label reference ("::label")
@@ -287,7 +287,7 @@ void parse_label_ref(ParserState *st, Token mark, char* prev) {
         char *patch_cbuf = malloc(128);
         patch_cbuf[0] = '\0';
         sprintf(patch_cbuf, ".%d", lb_offset);
-        
+
         st->lexed->tokens[st->token].cont = patch_cbuf;
         st->lexed->tokens[st->token].kind = NUMERIC_CONSTANT;
     } else {
@@ -395,7 +395,7 @@ Program parse(LexResult lexed) {
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(statements));
     int statement_count = 0;
-    
+
     Program prg;
     program_init(&prg);
     prg.statements = statements;
@@ -430,9 +430,19 @@ Program parse(LexResult lexed) {
                     // odd number of half-bytes, invalid
                     printf("ERROR: invalid data (must be even)");
                 }
+                pack_len = pack_len / 2; // divide by two because 0xff = 1 byte
                 BYTE *pack_data = datahex(pack.cont);
                 // write the pack data to the binary
+                if (!prg.data) {
+                    prg.data = malloc(sizeof(BYTE) * pack_len);
+                } else {
+                    prg.data = realloc(prg.data, sizeof(BYTE) * (prg.data_size + pack_len));
+                }
+                // copy the data
+                memcpy(prg.data + prg.data_size, pack_data, pack_len);
+                free(pack_data); // free decoded data
                 // update offset
+                prg.data_size += pack_len;
                 st.offset += pack_len;
             }
             break;
@@ -483,6 +493,8 @@ Program parse(LexResult lexed) {
         } while (n);
         // set entrypoint to label offset
         prg.entry = lb_offset;
+        // add data size to entry offset
+        prg.entry += prg.data_size;
     }
 
     parser_state_cleanup(&st);
@@ -492,14 +504,20 @@ Program parse(LexResult lexed) {
     return prg;
 }
 
-void free_program(Program prg) {
+void free_program(Program prg, bool free_data) {
     // free statement array
     free(prg.statements);
+    if (free_data && prg.data) {
+        // free data
+        free(prg.data);
+    }
 }
 
 /* #endregion */
 
 /* #region Binary */
+
+#define HEADER_SIZE 8
 
 void write_program(FILE *ouf, Program prg, bool write_header) {
     char w = '\0';
@@ -509,25 +527,38 @@ void write_program(FILE *ouf, Program prg, bool write_header) {
         fputs(REG, ouf);                               // magic
         fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
         uint16_t code_size = prg.statement_count * INSTR_SIZE;
-        fwrite(&code_size, sizeof(code_size), 1, ouf); // code size
+        fwrite(&code_size, sizeof(code_size), 1, ouf);         // code size
+        fwrite(&prg.data_size, sizeof(prg.data_size), 1, ouf); // data size
     } else {
         printf("--bare given, not writing header\n");
     }
 
+    // write data
+    if (prg.data) {
+        for (int i = 0; i < prg.data_size; i++) {
+            w = prg.data[i];
+            fwrite(&w, sizeof(w), 1, ouf);
+        }
+        printf("data[%d] \n", (int)prg.data_size);
+    }
+
     // write code
+    size_t code_offset = 0;
     for (int i = 0; i < prg.statement_count; i++) {
         Statement st = prg.statements[i];
         // write binary opcode
         w = st.opcode;
-        fwrite(&w, 1, sizeof(w), ouf);
+        fwrite(&w, sizeof(w), 1, ouf);
         // write binary args
         w = st.a1;
-        fwrite(&w, 1, sizeof(w), ouf);
+        fwrite(&w, sizeof(w), 1, ouf);
         w = st.a2;
-        fwrite(&w, 1, sizeof(w), ouf);
+        fwrite(&w, sizeof(w), 1, ouf);
         w = st.a3;
-        fwrite(&w, 1, sizeof(w), ouf);
+        fwrite(&w, sizeof(w), 1, ouf);
+        code_offset += st.sz;
     }
+    printf("code[%d] \n", (int)code_offset);
 }
 
 /* #endregion */
@@ -562,7 +593,8 @@ void dump_program(Program prg) {
     printf("entry:     $%04x\n", prg.entry);
     uint16_t code_size = prg.statement_count * INSTR_SIZE;
     printf("code size: $%04x\n", code_size);
-    int offset = 0;
+    printf("data size: $%04x\n", prg.data_size);
+    int offset = HEADER_SIZE + prg.data_size;
     for (int i = 0; i < prg.statement_count; i++) {
         Statement st = prg.statements[i];
         printf("%04x ", offset);
