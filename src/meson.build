@@ -7,7 +7,7 @@ disasm_sources = [
     'disasm.c', 'disasm.h',
     'asm.h',
     'instr.h',
-    'util.h'
+    'util.h', 'buf.h'
 ]
 executable('regular-disasm', disasm_sources)
 
@@ -15,7 +15,7 @@ asm_sources = [
     'asm.c', 'asm.h',
     'asm_ext.h',
     'instr.h',
-    'util.h'
+    'util.h', 'buf.h'
 ]
 executable('regular-asm', asm_sources)
 
@@ -23,6 +23,6 @@ emu_sources = [
     'emu.c', 'emu.h',
     'instr.h',
     'disasm.h',
-    'util.h'
+    'util.h', 'buf.h'
 ]
 executable('regular-emu', emu_sources)
