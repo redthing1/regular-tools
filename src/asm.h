@@ -6,6 +6,7 @@ provides lexer and parser for the assembler
 #pragma once
 
 #include "ds.h"
+#include "buffie.h"
 #include "instr.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -395,11 +396,17 @@ Statement parse_statement(ParserState *st, char *mnem) {
     return stmt;
 }
 
+DECLARE_BUFFIE_STRUCT(int)
+DECLARE_BUFFIE_FUNCS(int)
+
 Program parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(Statement));
     int statement_count = 0;
+
+    Buffie_int int_buf;
+    buf_allocate_int(&int_buf, 4);
 
     Program prg;
     program_init(&prg);
