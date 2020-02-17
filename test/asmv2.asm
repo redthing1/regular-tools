@@ -16,13 +16,14 @@ data1:
     #d \'hello ; data string support
     #d \x00 ; null terminator
 
+; use BIND ("@") instead of MARK (":") to define a macro
 addi@ rA rB v0 ; this macro sets rA = rB + v0
     add rA rB v0
 
 main:
     set r1 $0
     set r2 $4
-    @addi r1 r2 $8
+    addi r1 r2 $8
     ; labels can be ahead-referenced
     ; any relative offsets will be resolved later
     cal ::func1
