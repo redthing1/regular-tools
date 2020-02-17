@@ -8,7 +8,7 @@ typedef struct {
 } AssemblerOptions;
 
 int main(int argc, char **argv) {
-    printf("[REGULAR_ad] assembler\n");
+    printf("[REGULAR_ad] assembler v2.0\n");
     if (argc < 3) {
         printf("usage: asm <in> <out> --opts\n");
     }

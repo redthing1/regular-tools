@@ -10,7 +10,7 @@ typedef struct {
 } EmuOptions;
 
 int main(int argc, char **argv) {
-    printf("[REGULAR_ad] emulator\n");
+    printf("[REGULAR_ad] emulator v1.1\n");
     if (argc < 2) {
         printf("usage: emu <in> --flags\n");
     }

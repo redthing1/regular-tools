@@ -8,7 +8,7 @@ typedef struct {
 } DisasmOptions;
 
 int main(int argc, char **argv) {
-    printf("[REGULAR_ad] disassembler\n");
+    printf("[REGULAR_ad] disassembler v1.0\n");
     if (argc < 2) {
         printf("usage: disasm <in> --args\n");
     }
