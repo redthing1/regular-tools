@@ -42,9 +42,9 @@ typedef struct {
 } Instruction;
 
 typedef struct {
-    InstructionType type;
+    InstructionType type; // INSTR_OP_I, INSTR_OP_R, etc.
     OPCODE opcode;
-    int fin_sz;
+    int sz; // final size of instruction
 } InstructionInfo;
 
 /* #region OPCODE and REG definitions */
@@ -121,65 +121,68 @@ typedef struct {
 
 /* #endregion */
 
+#define INSTRINFO(WORDS, TYPE, OPCODE)                                                                                 \
+    (InstructionInfo) { .sz = INSTR_SIZE * WORDS, .type = TYPE, .opcode = OPCODE }
+
 InstructionInfo get_instruction_info(char *mnem) {
     if (streq(mnem, "nop")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP, .opcode = OP_NOP};
+        return INSTRINFO(1, INSTR_OP, OP_NOP);
     } else if (streq(mnem, "add")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_ADD};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_ADD);
     } else if (streq(mnem, "sub")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_SUB};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_SUB);
     } else if (streq(mnem, "and")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_AND};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_AND);
     } else if (streq(mnem, "orr")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_ORR};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_ORR);
     } else if (streq(mnem, "xor")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_XOR};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_XOR);
     } else if (streq(mnem, "not")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_NOT};
+        return INSTRINFO(1, INSTR_OP_R_R, OP_NOT);
     } else if (streq(mnem, "lsh")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_LSH};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_LSH);
     } else if (streq(mnem, "ash")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_ASH};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_ASH);
     } else if (streq(mnem, "tcu")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_TCU};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_TCU);
     } else if (streq(mnem, "tcs")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R_R, .opcode = OP_TCS};
+        return INSTRINFO(1, INSTR_OP_R_R_R, OP_TCS);
     } else if (streq(mnem, "set")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_I, .opcode = OP_SET};
+        return INSTRINFO(1, INSTR_OP_R_I, OP_SET);
     } else if (streq(mnem, "mov")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_MOV};
+        return INSTRINFO(1, INSTR_OP_R_R, OP_MOV);
     } else if (streq(mnem, "ldw")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_LDW};
+        return INSTRINFO(1, INSTR_OP_R_R, OP_LDW);
     } else if (streq(mnem, "stw")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_STW};
+        return INSTRINFO(1, INSTR_OP_R_R, OP_STW);
     } else if (streq(mnem, "ldb")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_LDB};
+        return INSTRINFO(1, INSTR_OP_R_R, OP_LDB);
     } else if (streq(mnem, "stb")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_STB};
+        return INSTRINFO(1, INSTR_OP_R_R, OP_STB);
     } else if (streq(mnem, "hlt")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP, .opcode = OP_HLT};
+        return INSTRINFO(1, INSTR_OP, OP_HLT);
     } else if (streq(mnem, "int")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R, .opcode = OP_INT};
+        return INSTRINFO(1, INSTR_OP_R, OP_INT);
     } else if (streq(mnem, "brx")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R_R, .opcode = OP_BRX};
+        return INSTRINFO(1, INSTR_OP_R_R, OP_BRX);
     } else if (streq(mnem, "jmp")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_R, .opcode = OP_JMP};
+        return INSTRINFO(1, INSTR_OP_R, OP_JMP);
     } else if (streq(mnem, "jmi")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE, .type = INSTR_OP_I, .opcode = OP_JMI};
+        return INSTRINFO(1, INSTR_OP_I, OP_JMI);
     } else if (streq(mnem, "psh")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R, .opcode = OP_PSH};
+        return INSTRINFO(3, INSTR_OP_R, OP_PSH);
     } else if (streq(mnem, "pop")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R, .opcode = OP_POP};
+        return INSTRINFO(3, INSTR_OP_R, OP_POP);
     } else if (streq(mnem, "cal")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 6, .type = INSTR_OP_R, .opcode = OP_CAL};
+        return INSTRINFO(6, INSTR_OP_R, OP_CAL);
     } else if (streq(mnem, "ret")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 4, .type = INSTR_OP, .opcode = OP_RET};
+        return INSTRINFO(4, INSTR_OP, OP_RET);
     } else if (streq(mnem, "swp")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 3, .type = INSTR_OP_R_R, .opcode = OP_SWP};
+        return INSTRINFO(3, INSTR_OP_R_R, OP_SWP);
     } else if (streq(mnem, "adi")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R_I, .opcode = OP_ADI};
+        return INSTRINFO(2, INSTR_OP_R_I, OP_ADI);
     } else if (streq(mnem, "sbi")) {
-        return (InstructionInfo){.fin_sz = INSTR_SIZE * 2, .type = INSTR_OP_R_I, .opcode = OP_SBI};
+        return INSTRINFO(2, INSTR_OP_R_I, OP_SBI);
     } else {
         // unrecognized mnem
         return (InstructionInfo){.type = INSTR_INV, .opcode = OP_NOP};
