@@ -13,6 +13,7 @@ executable('regular-disasm', disasm_sources)
 
 asm_sources = [
     'asm.c', 'asm.h',
+    'lex.h',
     'asm_ext.h',
     'instr.h',
     'util.h', 'buffie.h'
