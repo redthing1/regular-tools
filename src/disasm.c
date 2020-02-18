@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     Program prg = decode_program(inf_read.content, inf_read.size);
     if (prg.status == 0) { // successful decode
         printf("== DUMP ==\n");
-        dump_program(prg, !options.raw);
+        dump_source_program(prg, !options.raw);
     }
 
     // clean up

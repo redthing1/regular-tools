@@ -63,33 +63,34 @@ int main(int argc, char **argv) {
     // parse the tokens into a program
     printf("== PARSE ==\n");
     // parse program with utility instructions
-    Program prg_hl = parse(lex_result);
-    if (prg_hl.status != 0) { // unsuccessful program
-        printf("assembly pass 0 failed [%d]\n", prg_hl.status);
+    SourceProgram source = parse(lex_result);
+    if (source.status != 0) { // unsuccessful program
+        printf("assembly pass 0 failed [%d]\n", source.status);
         return 2;
     }
 
     // dump the pass 0 program
-    printf("== DUMP [pre] ==\n");
-    dump_program(prg_hl, true);
+    printf("== DUMP [src] ==\n");
+    dump_source_program(source);
 
-    // compile pseudo-instructions - pass 1
-    Program prg_pass1 = compile_pseudo(prg_hl);
-    Program prg_out = compile_pseudo(prg_pass1);
-    free_program(prg_hl, false);
-    free_program(prg_pass1, false);
+    // simplify program
+    SourceProgram final = simplify_pseudo_2pass(source);
+    free_source_program(source, false);
 
-    // dump the finished program
-    printf("== DUMP [fin] ==\n");
-    dump_program(prg_out, true);
+    CompiledProgram compiled = compile_program(final);
+
+    // dump the compiled program
+    printf("== DUMP [cmp] ==\n");
+    dump_compiled_program(compiled);
+
     // write out the program to binary
     printf("== WRITE ==\n");
-    write_program(ouf_fp, prg_out);
+    write_program(ouf_fp, compiled);
 
     // clean up
     free(inf_read.content);
     free_lex_result(lex_result);
-    free_program(prg_out, true);
+    free_source_program(final, true);
 
     fclose(ouf_fp); // close output file
 

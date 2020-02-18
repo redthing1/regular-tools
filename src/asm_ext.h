@@ -14,7 +14,7 @@ typedef struct {
 
 AStatement take_statement(PseudoAssemblerState *pas) { return buf_get_AStatement(&pas->src->statements, pas->pos++); }
 
-SourceProgram compile_pseudo(SourceProgram src) {
+SourceProgram compile_pseudo_instructions(SourceProgram src) {
     SourceProgram prg;
     source_program_init(&prg);
     // copy from source program
@@ -145,4 +145,12 @@ SourceProgram compile_pseudo(SourceProgram src) {
     }
 
     return prg;
+}
+
+SourceProgram simplify_pseudo_2pass(SourceProgram src) {
+    // two-pass compile pseudo
+    SourceProgram s1 = compile_pseudo_instructions(src);
+    free_source_program(s1, false);
+    SourceProgram s2 = compile_pseudo_instructions(s1);
+    return s2;
 }

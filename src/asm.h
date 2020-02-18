@@ -260,6 +260,26 @@ SourceProgram parse(LexResult lexed) {
     return src;
 }
 
+CompiledProgram compile_program(SourceProgram src) {
+    CompiledProgram cmp;
+    // this will only work if src is fully simplified (1 Statement : 1 Instruction)
+    cmp.instruction_count = src.statements.sz;
+    cmp.instructions = malloc(sizeof(Instruction) * cmp.instruction_count);
+    // copy data
+    cmp.data = src.data;
+    cmp.data_size = cmp.data_size;
+
+    // step-by-step convert the program
+    for (int i = 0; i < src.statements.sz; i++) {
+        AStatement st = buf_get_AStatement(&src.statements, i);
+        // we assume that all statement arguments are resolved
+        Instruction in = (Instruction){.opcode = st.op, .a1 = st.a1.val, st.a2.val, st.a3.val};
+        cmp.instructions[i] = in; // save the instruction
+    }
+
+    return cmp;
+}
+
 void free_source_program(SourceProgram src, bool free_data) {
     // free statement buffer
     buf_free_AStatement(&src.statements);
@@ -267,6 +287,14 @@ void free_source_program(SourceProgram src, bool free_data) {
         // free data
         free(src.data);
     }
+}
+
+void free_compiled_program(CompiledProgram cmp) {
+    // we don't touch data.
+    // free the instructions
+    free(cmp.instructions);
+    cmp.instructions = NULL;
+    cmp.instruction_count = 0;
 }
 
 /* #endregion */
@@ -323,15 +351,11 @@ void write_compiled_program(FILE *ouf, CompiledProgram cmp) {
 
 /* #region Debugging */
 
-void dump_instruction(Instruction in, bool rich) {
+void dump_instruction(Instruction in) {
     const char *op_name = get_instruction_mnem(in.opcode);
     InstructionInfo info = get_instruction_info(op_name);
 
-    if (rich) {
-        printf("OP:   [%3s]", op_name);
-    } else {
-        printf("    %3s", op_name);
-    }
+    printf("OP:   [%3s]", op_name);
     if ((info.type & INSTR_K_R1) > 0) {
         printf(" %-3s", get_register_name(in.a1));
     }
@@ -353,7 +377,11 @@ void dump_instruction(Instruction in, bool rich) {
     printf("\n");
 }
 
-void dump_source_program(SourceProgram src, bool rich) {
+void dump_statement(AStatement stmt) {
+    // TODO: implement this
+}
+
+void dump_source_program(SourceProgram src) {
     printf("entry:     $%04x\n", src.entry);
     uint16_t code_size = src.statements.ct * INSTR_SIZE;
     printf("code size: $%04x\n", code_size);
@@ -362,11 +390,14 @@ void dump_source_program(SourceProgram src, bool rich) {
     for (int i = 0; i < src.statements.ct; i++) {
         AStatement st = buf_get_AStatement(&src.statements, i);
         InstructionInfo info = get_instruction_info_op(st.op);
-        if (rich)
-            printf("%04x ", offset);
-        dump_statement(st, rich);
+        printf("%04x ", offset);
+        dump_statement(st);
         offset += info.sz;
     }
+}
+
+void dump_compiled_program(CompiledProgram cmp) {
+    // TODO: implement this
 }
 
 /* #endregion */
