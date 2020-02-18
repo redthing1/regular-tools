@@ -104,7 +104,7 @@ Token take_token(ParserState *st) {
 Token expect_token(ParserState *st, CharType type) {
     Token next = peek_token(st);
     CharType next_type = next.kind;
-    if (next_type == type) {
+    if ((next_type & type) > 0) {
         // expected token found
         return take_token(st);
     } else {
@@ -175,38 +175,60 @@ SourceProgram parse(LexResult lexed) {
         switch (next.kind) {
         case DIRECTIVE: { // handle directive
             Token dir = take_token(&st);
-            // check if it is the "#entry" directive
-            if (streq(dir.cont, "#entry")) {
+            if (streq(dir.cont, "#entry")) { // entrypoint directive
                 // following label has the entry point
                 expect_token(&st, MARK);
                 Token label_ref = expect_token(&st, IDENTIFIER);
                 entry_label = label_ref.cont;   // store entry label
             } else if (streq(dir.cont, "#d")) { // data directive
-                // Token pack = expect_token(&st, PACK);
-                // size_t pack_len = strlen(pack.cont);
-                // if (pack_len % 2 != 0) {
-                //     // odd number of half-bytes, invalid
-                //     printf("ERROR: invalid data (must be even)");
-                // }
-                // pack_len = pack_len / 2;              // divide by two because 0xff = 1 byte
-                // BYTE *pack_data = datahex(pack.cont); // convert data from hex
-                // // write the pack data to the binary
-                // if (!src.data) {
-                //     src.data = malloc(sizeof(BYTE) * pack_len);
-                // } else {
-                //     src.data = realloc(src.data, sizeof(BYTE) * (src.data_size + pack_len));
-                // }
-                // // copy the data
-                // memcpy(src.data + src.data_size, pack_data, pack_len);
-                // free(pack_data); // free decoded data
-                // // update offset
-                // src.data_size += pack_len;
-                // st.offset += pack_len;
-                // printf("data block, len: $%04x\n", (UWORD)pack_len);
+                expect_token(&st, PACK_START);  // eat pack start
+                // check pack type indicator
+                Token pack_type_indicator = expect_token(&st, ALPHA | QUOT);
+                size_t pack_len = 0; // size of packed data
+
+                switch (pack_type_indicator.kind) {
+                case ALPHA: { // byte pack
+                    Token pack = expect_token(&st, NUMERIC_CONSTANT);
+                    pack_len = strlen(pack.cont);
+                    if (pack_len % 2 != 0) {
+                        // odd number of half-bytes, invalid
+                        printf("ERROR: invalid data (must be even)");
+                    }
+                    pack_len = pack_len / 2;              // divide by two because 0xff = 1 byte
+                    BYTE *pack_data = datahex(pack.cont); // convert data from hex
+                    // write the pack data to the binary
+                    if (!src.data) {
+                        src.data = malloc(sizeof(BYTE) * pack_len);
+                    } else {
+                        src.data = realloc(src.data, sizeof(BYTE) * (src.data_size + pack_len));
+                    }
+                    // copy the data
+                    memcpy(src.data + src.data_size, pack_data, pack_len);
+                    free(pack_data); // free decoded data
+                    break;
+                }
+                case QUOT: {
+                    Token pack = take_token(&st); // any following token is valid
+                    pack_len = strlen(pack.cont);
+                    // copy string from token to data
+                    memcpy(src.data + src.data_size, pack.cont, pack_len);
+                    break;
+                }
+                default:
+                    printf("unrecognized pack type %s\n", pack_type_indicator.cont);
+                    break;
+                }
+
+                // update offset
+                src.data_size += pack_len;
+                st.offset += pack_len;
+                printf("data block, len: $%04x\n", (UWORD)pack_len);
             }
             break;
         }
         case IDENTIFIER: {
+            // TODO: handle id
+            take_token(&st); // eat the tok
             break;
         }
         default:
