@@ -291,10 +291,10 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         ARG d3 = emu_st->mem[emu_st->reg[0] + 3];
         emu_st->reg[0] += INSTR_SIZE; // advance PC
         Instruction in = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
-        InstructionInfo info = get_instruction_info_op(in.opcode);
+        // InstructionInfo info = get_instruction_info_op(in.opcode);
 
         if (emu_st->debug) {
-            dump_instruction(in); // dump instruction
+            dump_instruction(in, true); // dump instruction
         }
         emu_exec(emu_st, in); // execute instruction
         if (emu_st->debug) {

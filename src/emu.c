@@ -49,7 +49,8 @@ int main(int argc, char **argv) {
 
     // copy binary to offset 0
     RGHeader hd = emu_load(emu_st, 0, inf_read.content, inf_read.size);
-    emu_run(emu_st, hd.entry);
+    uint16_t code_start = hd.data_size;
+    emu_run(emu_st, code_start); // jump to the start of code
 
     // clean up
     emu_free(emu_st);

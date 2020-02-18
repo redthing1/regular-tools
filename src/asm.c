@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
     // dump the compiled program
     printf("== DUMP [cmp] ==\n");
-    dump_compiled_program(compiled);
+    dump_compiled_program(compiled, true);
 
     // write out the program to binary
     printf("== WRITE ==\n");

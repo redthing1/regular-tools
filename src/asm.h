@@ -260,11 +260,15 @@ SourceProgram parse(LexResult lexed) {
     return src;
 }
 
-void compiled_program_init(CompiledProgram* cmp) {
+void compiled_program_init(CompiledProgram *cmp) {
     cmp->instructions = NULL;
     cmp->instruction_count = 0;
     cmp->data = NULL;
     cmp->data_size = 0;
+}
+
+Instruction compile_statement(const AStatement *st) {
+    return (Instruction){.opcode = st->op, .a1 = st->a1.val, st->a2.val, st->a3.val};
 }
 
 CompiledProgram compile_program(SourceProgram src) {
@@ -282,7 +286,7 @@ CompiledProgram compile_program(SourceProgram src) {
     for (size_t i = 0; i < src.statements.sz; i++) {
         AStatement st = buf_get_AStatement(&src.statements, i);
         // we assume that all statement arguments are resolved
-        Instruction in = (Instruction){.opcode = st.op, .a1 = st.a1.val, st.a2.val, st.a3.val};
+        Instruction in = compile_statement(&st);
         cmp.instructions[i] = in; // save the instruction
     }
 
@@ -360,11 +364,15 @@ void write_compiled_program(FILE *ouf, CompiledProgram cmp) {
 
 /* #region Debugging */
 
-void dump_instruction(Instruction in) {
+void dump_instruction(Instruction in, bool rich) {
     const char *op_name = get_instruction_mnem(in.opcode);
     InstructionInfo info = get_instruction_info(op_name);
 
-    printf("OP:   [%3s]", op_name);
+    if (rich) {
+        printf("[%3s]", op_name);
+    } else {
+        printf("%3s", op_name);
+    }
     if ((info.type & INSTR_K_R1) > 0) {
         printf(" %-3s", get_register_name(in.a1));
     }
@@ -386,8 +394,10 @@ void dump_instruction(Instruction in) {
     printf("\n");
 }
 
-void dump_statement(AStatement stmt) {
-    // TODO: implement this
+void dump_statement(AStatement st) {
+    // compile the statement
+    Instruction in = compile_statement(&st);
+    dump_instruction(in, true);
 }
 
 void dump_source_program(SourceProgram src) {
@@ -406,7 +416,16 @@ void dump_source_program(SourceProgram src) {
 }
 
 void dump_compiled_program(CompiledProgram cmp, bool rich) {
-    // TODO: implement this
+    printf("code size: $%04x\n", cmp.instruction_count * INSTR_SIZE);
+    printf("data size: $%04x\n", cmp.data_size);
+    int offset = HEADER_SIZE + cmp.data_size;
+    for (size_t i = 0; i < cmp.instruction_count; i++) {
+        Instruction in = cmp.instructions[i];
+        if (rich)
+            printf("%04x ", offset);
+        dump_instruction(in, rich);
+        offset += INSTR_SIZE;
+    }
 }
 
 /* #endregion */
