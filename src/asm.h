@@ -5,7 +5,6 @@ provides lexer and parser for the assembler
 
 #pragma once
 
-#include "ds.h"
 #include "instr.h"
 #include "lex.h"
 #include <stdint.h>
@@ -59,17 +58,19 @@ typedef struct {
 } CompiledProgram;
 
 typedef struct {
-    LexResult *lexed;
-    int token;    // token index
-    int cpos;     // char position of reading
-    int offset;   // binary output position
-    List *labels; // label list
-} ParserState;
+    char *name;
+    int offset;
+} LabelDef;
+
+BUFFIE_OF(LabelDef)
 
 typedef struct {
-    char *label;
-    int offset;
-} Label;
+    LexResult *lexed;
+    int token;              // token index
+    int cpos;               // char position of reading
+    int offset;             // binary output position
+    Buffie_LabelDef labels; // label buffer
+} ParserState;
 
 void source_program_init(SourceProgram *p) {
     buf_alloc_AStatement(&p->statements, 128);
@@ -80,9 +81,9 @@ void source_program_init(SourceProgram *p) {
 
 void parser_state_cleanup(ParserState *st) {
     // clean up labels
-    while (!list_empty(st->labels)) {
-        Label *lb = (Label *)list_pop(st->labels); // pop off remaining labels
-        free(lb);                                  // free label
+    for (size_t i = 0; i < st->labels.ct; i++) {
+        LabelDef ld = buf_get_LabelDef(&st->labels, i);
+        free(ld.name);
     }
 }
 
@@ -113,53 +114,7 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
-uint16_t parse_label_ref(ParserState *st, Token mark, char *prev) {
-    // check if it's a double tok
-    if (strlen(mark.cont) > 1) { // check if :: instead of :
-        // this is a label reference ("::label")
-        Token lbref = peek_token(st);
-        // find the matching label and replace with label offset
-        ListNode *n = st->labels->top;
-        uint16_t lb_offset = 0;
-        do {
-            Label *lb = (Label *)(n->data);
-            if (streq(lb->label, lbref.cont)) {
-                lb_offset = lb->offset;
-                break;
-            }
-            n = n->link;
-        } while (n);
-        // hotpatch the token (free first)
-        free(lbref.cont);
-        char *patch_cbuf = malloc(128);
-        patch_cbuf[0] = '\0';
-        sprintf(patch_cbuf, ".%d", lb_offset);
-
-        Token patch_tok = buf_get_Token(&st->lexed->tokens, st->token);
-        patch_tok.cont = patch_cbuf;
-        patch_tok.kind = NUMERIC_CONSTANT;
-        buf_set_Token(&st->lexed->tokens, st->token, patch_tok);
-
-        return lb_offset;
-    } else {
-        // this is a label definition ("label:")
-        // store the label
-        // create and store a label
-        Label *label = malloc(sizeof(Label));
-        label->label = prev;
-        label->offset = st->offset;
-        list_push(st->labels, label);
-        return 0;
-    }
-}
-
 uint32_t parse_numeric(ParserState *st) {
-    // look at the next token (it could be a ref)
-    Token next_tok = peek_token(st);
-    if (next_tok.kind == MARK) {
-        Token mark = expect_token(st, MARK); // eat the mark
-        parse_label_ref(st, mark, NULL);
-    }
     // interpret numeric token
     Token num_tok = expect_token(st, NUMERIC_CONSTANT);
     char pfx = num_tok.cont[0];
@@ -189,15 +144,30 @@ uint32_t parse_numeric(ParserState *st) {
     return val;
 }
 
+int resolve_label(ParserState *st, char *name) {
+    // find the defined label
+    for (size_t i = 0; i < st->labels.ct; i++) {
+        LabelDef lb = buf_get_LabelDef(&st->labels, i);
+        if (streq(lb.name, name)) {
+            return lb.offset;
+        }
+    }
+    printf("ERROR: failed to resolve label %s\n", name);
+    return 0; // not resolved
+}
+
 SourceProgram parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
+    buf_alloc_LabelDef(&st.labels, 16);
+
     SourceProgram src;
     source_program_init(&src);
 
-    List labels;
-    st.labels = &labels;
-    list_init(&labels);
-    char *entry_lbl = NULL;
+    // entry label
+    char *entry_label = NULL;
+
+    // emit the entry jump (as nop)
+    buf_push_AStatement(&src.statements, IMM_STATEMENT(OP_NOP, 0, 0, 0));
 
     // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
@@ -209,9 +179,8 @@ SourceProgram parse(LexResult lexed) {
             if (streq(dir.cont, "#entry")) {
                 // following label has the entry point
                 expect_token(&st, MARK);
-                Token lbl = expect_token(&st, IDENTIFIER);
-                // store entry label
-                entry_lbl = lbl.cont;
+                Token label_ref = expect_token(&st, IDENTIFIER);
+                entry_label = label_ref.cont;   // store entry label
             } else if (streq(dir.cont, "#d")) { // data directive
                 // Token pack = expect_token(&st, PACK);
                 // size_t pack_len = strlen(pack.cont);
@@ -249,9 +218,10 @@ SourceProgram parse(LexResult lexed) {
     }
 
     // check for entry point label
-    if (entry_lbl) {
-        // find the matching label and replace with label offset
-        // TODO: make this work
+    if (entry_label) {
+        // resolve the label and replace the entry jump
+        UWORD entry_addr = resolve_label(&st, entry_label);
+        buf_set_AStatement(&src.statements, 0, IMM_STATEMENT(OP_JMI, entry_addr, 0, 0));
     }
 
     parser_state_cleanup(&st);
