@@ -1,7 +1,7 @@
 #pragma once
 
-#include "util.h"
 #include "buffie.h"
+#include "util.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,9 +17,10 @@ typedef enum {
     MARK = 1 << 5,             // ':'
     QUOT = 1 << 6,             // '''
     BIND = 1 << 7,             // '@'
-    DIRECTIVE_PREFIX = 1 << 8, // '#'
-    NUMERIC_HEX = 1 << 9,      // beef
-    PACK_START = 1 << 10,      // '\'
+    OFFSET = 1 << 8,           // '^'
+    DIRECTIVE_PREFIX = 1 << 9, // '#'
+    NUMERIC_HEX = 1 << 10,     // beef
+    PACK_START = 1 << 11,      // '\'
     IDENTIFIER = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
     NUMERIC_CONSTANT = NUMERIC | NUMERIC_HEX | NUM_SPECIAL,
@@ -55,6 +56,8 @@ CharType classify_char(char c) {
         return QUOT;
     case '@':
         return BIND;
+    case '^':
+        return OFFSET;
     case '#':
         return DIRECTIVE_PREFIX;
     case '\\':
@@ -123,17 +126,22 @@ void skip_until(LexerState *st, char until) {
 }
 
 Token make_token_of(LexerState *st, char *working, CharType type) {
-    take_chars(st, working, type);
-    Token tok = {.kind = type, .cont = working};
+    // copy working to new buffer
+    char *cont = util_strmk(strlen(working) + 1);
+    strcpy(cont, working);
+    take_chars(st, cont, type);
+    Token tok = {.kind = type, .cont = cont};
     return tok;
 }
+
+void reset_working(char *str) { str[0] = '\0'; }
 
 LexResult lex(char *buf, size_t buf_sz) {
     LexerState st = {.buf = buf, .size = buf_sz, .pos = 0, .line = 1, .line_start = 0};
     Buffie_Token tokens;
     buf_alloc_Token(&tokens, 256);
-    char *working = NULL;
-    size_t TOKEN_STR_SIZE = 128;
+    size_t TOKEN_STR_SIZE = 1024;
+    char *working = util_strmk(TOKEN_STR_SIZE);
 
     while (st.pos < st.size) {
         skip_chars(&st, SPACE);         // skip any leading whitespace
@@ -146,7 +154,7 @@ LexResult lex(char *buf, size_t buf_sz) {
         }
         // process character
         char c = peek_char(&st);
-        working = util_strmk(TOKEN_STR_SIZE);
+        reset_working(working);
 
         CharType c_type = classify_char(c);
         if ((c_type & ALPHA) > 0) { // start of identifier
@@ -161,13 +169,15 @@ LexResult lex(char *buf, size_t buf_sz) {
             buf_push_Token(&tokens, make_token_of(&st, working, QUOT));
         } else if ((c_type & BIND) > 0) {
             buf_push_Token(&tokens, make_token_of(&st, working, BIND));
+        } else if ((c_type & OFFSET) > 0) {
+            buf_push_Token(&tokens, make_token_of(&st, working, OFFSET));
         } else if ((c_type & NUM_SPECIAL) > 0) {
             buf_push_Token(&tokens, make_token_of(&st, working, NUMERIC_CONSTANT));
-        } else if ((c_type & PACK_START) > 0) { // start of a pack, read in pack context
-            buf_push_Token(&tokens, make_token_of(&st, working, PACK_START));
-
-            working = util_strmk(TOKEN_STR_SIZE); // reallocate working
-
+        } else if ((c_type & PACK_START) > 0) {
+            // start of a pack, read in pack context
+            buf_push_Token(&tokens, make_token_of(&st, working, PACK_START)); // add the packstart
+            // get the escape
+            reset_working(working);
             CharType pack_escape = peek_chartype(&st);
             if (pack_escape == QUOT) { // \'
                 buf_push_Token(&tokens, make_token_of(&st, working, QUOT));
