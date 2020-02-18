@@ -121,6 +121,18 @@ void skip_until(LexerState *st, char until) {
     }
 }
 
+Token make_token_of(LexerState *st, char *working, CharType type) {
+    take_chars(st, working, type);
+    Token tok = {.kind = type, .cont = working};
+    return tok;
+}
+
+char *create_working() {
+    char* working = malloc(128);
+    working[0] = '\0';
+    return working;
+}
+
 LexResult lex(char *buf, size_t buf_sz) {
     LexerState st = {.buf = buf, .size = buf_sz, .pos = 0, .line = 1, .line_start = 0};
     Buffie_Token tokens;
@@ -138,66 +150,36 @@ LexResult lex(char *buf, size_t buf_sz) {
         }
         // process character
         char c = peek_char(&st);
-        working = malloc(128);
-        working[0] = '\0';
+        working = create_working();
+
         CharType c_type = classify_char(c);
         if ((c_type & ALPHA) > 0) { // start of identifier
-            take_chars(&st, working, IDENTIFIER);
-            Token tok = {.kind = IDENTIFIER, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, IDENTIFIER));
         } else if ((c_type & NUMERIC) > 0) { // start of num literal
-            take_chars(&st, working, NUMERIC);
-            Token tok = {.kind = NUMERIC, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, NUMERIC));
         } else if ((c_type & ARGSEP) > 0) {
-            take_chars(&st, working, ARGSEP);
-            Token tok = {.kind = ARGSEP, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, ARGSEP));
         } else if ((c_type & MARK) > 0) {
-            take_chars(&st, working, MARK);
-            Token tok = {.kind = MARK, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, MARK));
         } else if ((c_type & QUOT) > 0) {
-            take_chars(&st, working, QUOT);
-            Token tok = {.kind = QUOT, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, QUOT));
         } else if ((c_type & BIND) > 0) {
-            take_chars(&st, working, BIND);
-            Token tok = {.kind = BIND, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, BIND));
         } else if ((c_type & NUM_SPECIAL) > 0) {
-            take_chars(&st, working, NUMERIC_CONSTANT);
-            Token tok = {.kind = NUMERIC_CONSTANT, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, NUMERIC_CONSTANT));
         } else if ((c_type & PACK_START) > 0) { // start of a pack, read in pack context
-            take_chars(&st, working, PACK_START);
-            Token tok = {.kind = PACK_START, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, PACK_START));
 
-            // reallocate working
-            working = malloc(128);
-            working[0] = '\0';
+            working = create_working(); // reallocate working
 
             CharType pack_escape = peek_chartype(&st);
             if (pack_escape == QUOT) { // \'
-                take_chars(&st, working, QUOT);
-                Token tok = {.kind = QUOT, .cont = working};
-                buf_push_Token(&tokens, tok);
+                buf_push_Token(&tokens, make_token_of(&st, working, QUOT));
             } else if (pack_escape == ALPHA) { // \x
-                take_chars(&st, working, ALPHA);
-                Token tok = {.kind = ALPHA, .cont = working};
-                buf_push_Token(&tokens, tok);
+                buf_push_Token(&tokens, make_token_of(&st, working, ALPHA));
             }
-
-            // take_char(&st); // eat pack start
-            // // hex data after start indicator
-            // take_chars(&st, working, PACK);
-            // Token tok = {.kind = PACK, .cont = working};
-            // buf_push_Token(&tokens, tok);
         } else if ((c_type & DIRECTIVE_PREFIX) > 0) {
-            take_chars(&st, working, DIRECTIVE);
-            Token tok = {.kind = DIRECTIVE, .cont = working};
-            buf_push_Token(&tokens, tok);
+            buf_push_Token(&tokens, make_token_of(&st, working, DIRECTIVE));
         } else {
             fprintf(stderr, "unrecognized character: %c, [%d:%d]\n", c, st.line, (int)(st.pos - st.line_start) + 1);
             take_char(&st); // eat the character
