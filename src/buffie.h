@@ -11,6 +11,7 @@
 #define DECLARE_BUFFIE_FUNCS(TYPE)                                                                                     \
     void buf_alloc_##TYPE(Buffie_##TYPE *b, size_t count) {                                                            \
         b->sz = count;                                                                                                 \
+        b->ct = 0;                                                                                                     \
         b->buf = malloc(count * sizeof(TYPE));                                                                         \
     }                                                                                                                  \
                                                                                                                        \
@@ -23,7 +24,7 @@
             b->sz = b->sz * 2;                                                                                         \
             b->buf = realloc(b->buf, b->sz * sizeof(TYPE));                                                            \
         }                                                                                                              \
-        buf_set_##TYPE(b, b->ct - 1, val);                                                                                \
+        buf_set_##TYPE(b, b->ct - 1, val);                                                                             \
     }                                                                                                                  \
                                                                                                                        \
     void buf_pop_##TYPE(Buffie_##TYPE *b) { b->ct--; }                                                                 \
