@@ -343,27 +343,29 @@ void write_program(FILE *ouf, Program prg, bool compat) {
 
 void dump_instruction(Instruction in, bool rich) {
     const char *op_name = get_instruction_mnem(in.opcode);
+    InstructionInfo info = get_instruction_info(op_name);
+
     if (rich) {
         printf("OP:   [%3s]", op_name);
     } else {
         printf("    %3s", op_name);
     }
-    if ((in.type & INSTR_K_R1) > 0) {
+    if ((info.type & INSTR_K_R1) > 0) {
         printf(" %-3s", get_register_name(in.a1));
     }
-    if ((in.type & INSTR_K_R2) > 0) {
+    if ((info.type & INSTR_K_R2) > 0) {
         printf(" %-3s", get_register_name(in.a2));
     }
-    if ((in.type & INSTR_K_R3) > 0) {
+    if ((info.type & INSTR_K_R3) > 0) {
         printf(" %-3s", get_register_name(in.a3));
     }
-    if ((in.type & INSTR_K_I1) > 0) {
+    if ((info.type & INSTR_K_I1) > 0) {
         uint32_t v = in.a1 | (in.a2 << 8) | (in.a3 << 16);
         printf(" $%04x", v);
-    } else if ((in.type & INSTR_K_I2) > 0) {
+    } else if ((info.type & INSTR_K_I2) > 0) {
         uint32_t v = in.a2 | (in.a3 << 8);
         printf(" $%04x", v);
-    } else if ((in.type & INSTR_K_I3) > 0) {
+    } else if ((info.type & INSTR_K_I3) > 0) {
         printf(" $%04x", in.a3);
     }
     printf("\n");
