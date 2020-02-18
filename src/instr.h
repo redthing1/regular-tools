@@ -39,9 +39,7 @@ typedef enum {
 typedef struct {
     OPCODE opcode;
     ARG a1, a2, a3;
-    InstructionType type;
-    int sz;
-} Statement;
+} Instruction;
 
 typedef struct {
     InstructionType type;

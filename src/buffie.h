@@ -34,7 +34,9 @@
         b->ct = 0;                                                                                                     \
         b->sz = 0;                                                                                                     \
         b->buf = NULL;                                                                                                 \
-    }
+    }                                                                                                                  \
+                                                                                                                       \
+    void buf_clear_##TYPE(Buffie_##TYPE *b) { b->ct = 0; }
 
 #define BUFFIE_OF(TYPE)                                                                                                \
     DECLARE_BUFFIE_STRUCT(TYPE)                                                                                        \

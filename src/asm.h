@@ -5,19 +5,38 @@ provides lexer and parser for the assembler
 
 #pragma once
 
+#include "ds.h"
+#include "instr.h"
+#include "lex.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lex.h"
-#include "instr.h"
-#include "ds.h"
 
 /* #region Parser */
 
 typedef struct {
-    Statement *statements;
-    int statement_count;
+    char *label; // label name
+    int offset;  // offset to label
+} RefValueSource;
+
+typedef enum { VS_IMM, VS_REF } ValueSourceKind;
+
+typedef struct {
+    ValueSourceKind kind; // IMM, REF
+    uint8_t val;          // immediate value
+    RefValueSource ref;   // reference to another
+} ValueSource;
+
+typedef struct {
+    OPCODE op;
+    ValueSource a1, a2, a3;
+} AStatement;
+
+BUFFIE_OF(AStatement)
+
+typedef struct {
+    Buffie_AStatement statements;
     uint16_t entry;
     int status;
     BYTE *data;
@@ -38,8 +57,7 @@ typedef struct {
 } Label;
 
 void program_init(Program *p) {
-    p->statements = NULL;
-    p->statement_count = 0;
+    buf_alloc_AStatement(&p->statements, 128);
     p->entry = 0;
     p->status = 0;
     p->data = NULL;
@@ -157,68 +175,10 @@ uint32_t parse_numeric(ParserState *st) {
     return val;
 }
 
-void populate_statement(Statement *stmt) {
-    const char *mnem = get_instruction_mnem(stmt->opcode);
-    InstructionInfo instr_info = get_instruction_info((char *)mnem);
-    stmt->type = instr_info.type;
-    stmt->sz = instr_info.fin_sz;
-}
-
-Statement parse_statement(ParserState *st, char *mnem) {
-    InstructionInfo instr_info = get_instruction_info(mnem);
-    Statement stmt = {.opcode = 0, .a1 = 0, .a2 = 0, .a3 = 0, .type = instr_info.type};
-    if (instr_info.type == INSTR_INV) {
-        // invalid mnemonic
-        printf("unrecognized mnemonic: %s\n", mnem);
-        return stmt; // an invalid instruction statement
-    }
-
-    stmt.opcode = instr_info.opcode; // set opcode
-    stmt.sz = instr_info.fin_sz;     // set instruction size
-
-    // read the instruction data
-    Token t1, t2, t3;
-
-    if ((instr_info.type & INSTR_K_R1) > 0) {
-        t1 = expect_token(st, IDENTIFIER);
-        stmt.a1 = get_register(t1.cont);
-    }
-    if ((instr_info.type & INSTR_K_R2) > 0) {
-        t2 = expect_token(st, IDENTIFIER);
-        stmt.a2 = get_register(t2.cont);
-    }
-    if ((instr_info.type & INSTR_K_R3) > 0) {
-        t3 = expect_token(st, IDENTIFIER);
-        stmt.a3 = get_register(t3.cont);
-    }
-    if ((instr_info.type & INSTR_K_I1) > 0) {
-        // 24-bit constant
-        uint32_t val = parse_numeric(st);
-        stmt.a1 = (ARG)(val & 0xff);        // lower 8
-        stmt.a2 = (ARG)((val >> 8) & 0xff); // middle 8
-        stmt.a3 = (ARG)(val >> 16);         // upper 8
-    } else if ((instr_info.type & INSTR_K_I2) > 0) {
-        // 16-bit constant
-        uint32_t val = parse_numeric(st);
-        stmt.a2 = (ARG)(val & 0xff); // lower 8
-        stmt.a3 = (ARG)(val >> 8);   // upper 8
-    } else if ((instr_info.type & INSTR_K_I3) > 0) {
-        // 8-bit constant
-        uint32_t val = parse_numeric(st);
-        stmt.a3 = (ARG)val;
-    }
-    return stmt;
-}
-
 Program parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
-    int statement_buf_size = 128;
-    Statement *statements = malloc(statement_buf_size * sizeof(Statement));
-    int statement_count = 0;
-
     Program prg;
     program_init(&prg);
-    prg.statements = statements;
 
     List labels;
     st.labels = &labels;
@@ -227,13 +187,6 @@ Program parse(LexResult lexed) {
 
     // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
-        // TODO: check to reallocate statements
-        if (statement_count > statement_buf_size - 1) {
-            statement_buf_size *= 2;
-            statements = realloc(statements, statement_buf_size * sizeof(Statement));
-            printf("reallocating statements[]\n");
-            return prg;
-        }
         Token next = peek_token(&st);
         switch (next.kind) {
         case DIRECTIVE: { // handle directive
@@ -271,26 +224,6 @@ Program parse(LexResult lexed) {
             break;
         }
         case IDENTIFIER: {
-            Token id_token = take_token(&st);
-            Token id_next = peek_token(&st);
-            bool instr = true;
-            if (id_next.kind == MARK) {
-                Token mark = expect_token(&st, MARK); // eat the mark
-                if (strlen(mark.cont) == 1) {         // if single :, then label def
-                    instr = false;
-                }
-                parse_label_ref(&st, mark, id_token.cont);
-            }
-            if (instr) {
-                // this is an instruction
-                // look at the instruction name and figure out what to do
-                char *mnem = id_token.cont;
-                Statement stmt = parse_statement(&st, mnem);
-                // dump instruction info
-                statements[statement_count++] = stmt;
-                // update offset
-                st.offset += stmt.sz;
-            }
             break;
         }
         default:
@@ -321,13 +254,12 @@ Program parse(LexResult lexed) {
     parser_state_cleanup(&st);
 
     // update program information
-    prg.statement_count = statement_count;
     return prg;
 }
 
 void free_program(Program prg, bool free_data) {
-    // free statement array
-    free(prg.statements);
+    // free statement buffer
+    buf_free_AStatement(&prg.statements);
     if (free_data && prg.data) {
         // free data
         free(prg.data);
@@ -345,17 +277,17 @@ void write_short(FILE *ouf, uint8_t v) {
     fwrite(&w1, sizeof(w1), 1, ouf);
 }
 
-void write_statement(FILE *ouf, Statement *st) {
+void write_instruction(FILE *ouf, Instruction *in) {
     char w = '\0';
     // write binary statement data
-    w = st->opcode;
+    w = in->opcode;
     fwrite(&w, sizeof(w), 1, ouf);
     // write binary args
-    w = st->a1;
+    w = in->a1;
     fwrite(&w, sizeof(w), 1, ouf);
-    w = st->a2;
+    w = in->a2;
     fwrite(&w, sizeof(w), 1, ouf);
-    w = st->a3;
+    w = in->a3;
     fwrite(&w, sizeof(w), 1, ouf);
 }
 
@@ -367,7 +299,7 @@ void write_program(FILE *ouf, Program prg, bool compat) {
         const char *REG = "rg";
         fputs(REG, ouf);                               // magic
         fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
-        uint16_t code_size = prg.statement_count * INSTR_SIZE;
+        uint16_t code_size = prg.statements.ct * INSTR_SIZE;
         fwrite(&code_size, sizeof(code_size), 1, ouf);         // code size
         fwrite(&prg.data_size, sizeof(prg.data_size), 1, ouf); // data size
         printf("header[%d] \n", HEADER_SIZE);
@@ -392,16 +324,16 @@ void write_program(FILE *ouf, Program prg, bool compat) {
     //     printf("[COMPAT] inserting entrypoint jump to $%04x\n", jmp_trg);
     //     Statement jmp = {.opcode = OP_SET, .a1 = REG_RPC, .a2 = jmp_trg, .a3 = 0};
     //     populate_statement(&jmp);
-    //     write_statement(ouf, &jmp);
+    //     write_instruction(ouf, &jmp);
     //     code_offset += jmp.sz;
     // }
 
-    // write statements
-    for (int i = 0; i < prg.statement_count; i++) {
-        Statement st = prg.statements[i];
-        write_statement(ouf, &st);
-        code_offset += st.sz;
-    }
+    // TODO: write instructions
+    // for (int i = 0; i < prg.statement_count; i++) {
+    //     Statement st = prg.statements[i];
+    //     write_instruction(ouf, &st);
+    //     code_offset += st.sz;
+    // }
     printf("code[%d] \n", (int)code_offset);
 }
 
@@ -409,30 +341,30 @@ void write_program(FILE *ouf, Program prg, bool compat) {
 
 /* #region Debugging */
 
-void dump_statement(Statement st, bool rich) {
-    const char *op_name = get_instruction_mnem(st.opcode);
+void dump_instruction(Instruction in, bool rich) {
+    const char *op_name = get_instruction_mnem(in.opcode);
     if (rich) {
         printf("OP:   [%3s]", op_name);
     } else {
         printf("    %3s", op_name);
     }
-    if ((st.type & INSTR_K_R1) > 0) {
-        printf(" %-3s", get_register_name(st.a1));
+    if ((in.type & INSTR_K_R1) > 0) {
+        printf(" %-3s", get_register_name(in.a1));
     }
-    if ((st.type & INSTR_K_R2) > 0) {
-        printf(" %-3s", get_register_name(st.a2));
+    if ((in.type & INSTR_K_R2) > 0) {
+        printf(" %-3s", get_register_name(in.a2));
     }
-    if ((st.type & INSTR_K_R3) > 0) {
-        printf(" %-3s", get_register_name(st.a3));
+    if ((in.type & INSTR_K_R3) > 0) {
+        printf(" %-3s", get_register_name(in.a3));
     }
-    if ((st.type & INSTR_K_I1) > 0) {
-        uint32_t v = st.a1 | (st.a2 << 8) | (st.a3 << 16);
+    if ((in.type & INSTR_K_I1) > 0) {
+        uint32_t v = in.a1 | (in.a2 << 8) | (in.a3 << 16);
         printf(" $%04x", v);
-    } else if ((st.type & INSTR_K_I2) > 0) {
-        uint32_t v = st.a2 | (st.a3 << 8);
+    } else if ((in.type & INSTR_K_I2) > 0) {
+        uint32_t v = in.a2 | (in.a3 << 8);
         printf(" $%04x", v);
-    } else if ((st.type & INSTR_K_I3) > 0) {
-        printf(" $%04x", st.a3);
+    } else if ((in.type & INSTR_K_I3) > 0) {
+        printf(" $%04x", in.a3);
     }
     printf("\n");
 }
