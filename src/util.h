@@ -36,7 +36,7 @@ FileReadResult util_read_file_contents(FILE *fp) {
     return res;
 }
 
-bool streq(char *s1, char *s2) { return strcmp(s1, s2) == 0; }
+bool streq(const char *s1, const char *s2) { return strcmp(s1, s2) == 0; }
 
 // https://stackoverflow.com/questions/21133701/is-there-any-function-in-the-c-language-which-can-convert_base-base-of-decimal-number/21134322#21134322
 int convert_dec_to(int val, int base) {

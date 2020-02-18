@@ -8,7 +8,7 @@ provides extensions to assembler
 #include "asm.h"
 
 typedef struct {
-    int pos;
+    size_t pos;
     SourceProgram *src;
 } PseudoAssemblerState;
 

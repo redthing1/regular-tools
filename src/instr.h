@@ -124,7 +124,7 @@ typedef struct {
 #define INSTRINFO(WORDS, TYPE, OPCODE)                                                                                 \
     (InstructionInfo) { .sz = INSTR_SIZE * WORDS, .type = TYPE, .opcode = OPCODE }
 
-InstructionInfo get_instruction_info(char *mnem) {
+InstructionInfo get_instruction_info(const char *mnem) {
     if (streq(mnem, "nop")) {
         return INSTRINFO(1, INSTR_OP, OP_NOP);
     } else if (streq(mnem, "add")) {

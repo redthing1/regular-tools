@@ -267,10 +267,10 @@ CompiledProgram compile_program(SourceProgram src) {
     cmp.instructions = malloc(sizeof(Instruction) * cmp.instruction_count);
     // copy data
     cmp.data = src.data;
-    cmp.data_size = cmp.data_size;
+    cmp.data_size = src.data_size;
 
     // step-by-step convert the program
-    for (int i = 0; i < src.statements.sz; i++) {
+    for (size_t i = 0; i < src.statements.sz; i++) {
         AStatement st = buf_get_AStatement(&src.statements, i);
         // we assume that all statement arguments are resolved
         Instruction in = (Instruction){.opcode = st.op, .a1 = st.a1.val, st.a2.val, st.a3.val};
@@ -387,7 +387,7 @@ void dump_source_program(SourceProgram src) {
     printf("code size: $%04x\n", code_size);
     printf("data size: $%04x\n", src.data_size);
     int offset = HEADER_SIZE + src.data_size;
-    for (int i = 0; i < src.statements.ct; i++) {
+    for (size_t i = 0; i < src.statements.ct; i++) {
         AStatement st = buf_get_AStatement(&src.statements, i);
         InstructionInfo info = get_instruction_info_op(st.op);
         printf("%04x ", offset);

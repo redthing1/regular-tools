@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 
     // write out the program to binary
     printf("== WRITE ==\n");
-    write_program(ouf_fp, compiled);
+    write_compiled_program(ouf_fp, compiled);
 
     // clean up
     free(inf_read.content);
