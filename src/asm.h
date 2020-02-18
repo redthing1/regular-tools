@@ -260,8 +260,17 @@ SourceProgram parse(LexResult lexed) {
     return src;
 }
 
+void compiled_program_init(CompiledProgram* cmp) {
+    cmp->instructions = NULL;
+    cmp->instruction_count = 0;
+    cmp->data = NULL;
+    cmp->data_size = 0;
+}
+
 CompiledProgram compile_program(SourceProgram src) {
     CompiledProgram cmp;
+    compiled_program_init(&cmp);
+
     // this will only work if src is fully simplified (1 Statement : 1 Instruction)
     cmp.instruction_count = src.statements.sz;
     cmp.instructions = malloc(sizeof(Instruction) * cmp.instruction_count);
@@ -396,7 +405,7 @@ void dump_source_program(SourceProgram src) {
     }
 }
 
-void dump_compiled_program(CompiledProgram cmp) {
+void dump_compiled_program(CompiledProgram cmp, bool rich) {
     // TODO: implement this
 }
 

@@ -157,7 +157,7 @@ void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
 /**
  * Execute an instruction in the emulator
  */
-void emu_exec(EmulatorState *emu_st, Statement in) {
+void emu_exec(EmulatorState *emu_st, Instruction in) {
     switch (in.opcode) {
     case OP_NOP: {
         // do nothing
@@ -290,13 +290,13 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
         ARG d2 = emu_st->mem[emu_st->reg[0] + 2];
         ARG d3 = emu_st->mem[emu_st->reg[0] + 3];
         emu_st->reg[0] += INSTR_SIZE; // advance PC
-        Statement stmt = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
-        populate_statement(&stmt); // interpret instruction type
+        Instruction in = {.opcode = op, .a1 = d1, .a2 = d2, .a3 = d3};
+        InstructionInfo info = get_instruction_info_op(in.opcode);
 
         if (emu_st->debug) {
-            dump_statement(stmt, true); // dump statement
+            dump_instruction(in); // dump instruction
         }
-        emu_exec(emu_st, stmt); // execute statement
+        emu_exec(emu_st, in); // execute instruction
         if (emu_st->debug) {
             emu_dump(emu_st, false); // dump abbrev. state
         }

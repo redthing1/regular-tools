@@ -37,15 +37,18 @@ int main(int argc, char **argv) {
     FileReadResult inf_read = util_read_file_contents(inf_fp);
     fclose(inf_fp);
 
-    Program prg = decode_program(inf_read.content, inf_read.size);
-    if (prg.status == 0) { // successful decode
+    DecoderResult decode_result = decode_compiled_program(inf_read.content, inf_read.size);
+    if (decode_result.status == 0) { // successful decode
         printf("== DUMP ==\n");
-        dump_source_program(prg, !options.raw);
+        dump_compiled_program(decode_result.cmp, !options.raw);
+    } else {
+        printf("program decode FAILED.\n");
+        return 1;
     }
 
     // clean up
     free(inf_read.content);
-    free_program(prg, true);
+    free_compiled_program(decode_result.cmp);
 
     return 0;
 }

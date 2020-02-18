@@ -16,7 +16,7 @@ typedef uint32_t UWORD; // unsigned word
 typedef BYTE ARG;   // args are one byte
 typedef ARG OPCODE; // opcodes are one arg
 
-#define HEADER_SIZE 8 // header size
+#define HEADER_SIZE 6 // header size
 
 typedef enum {
     INSTR_INV = 0, // invalid instruction
