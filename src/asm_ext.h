@@ -9,47 +9,35 @@ provides extensions to assembler
 
 typedef struct {
     int pos;
-    Program *src;
+    SourceProgram *src;
 } PseudoAssemblerState;
 
-Statement take_statement(PseudoAssemblerState *pas) { return pas->src->statements[pas->pos++]; }
+AStatement take_statement(PseudoAssemblerState *pas) { return buf_get_AStatement(&pas->src->statements, pas->pos++); }
 
-Program compile_pseudo(Program inp) {
-    int statement_buf_size = 128;
-    Statement *new_statements = malloc(statement_buf_size * sizeof(Statement));
-    int new_statement_count = 0;
+SourceProgram compile_pseudo(SourceProgram src) {
+    SourceProgram prg;
+    source_program_init(&prg);
+    // copy from source program
+    prg.entry = src.entry;
+    prg.data = src.data;
+    prg.data_size = src.data_size;
 
-    Program prg;
-    program_init(&prg);
-    prg.statements = new_statements;
-    prg.entry = inp.entry;
-    prg.data = inp.data;
-    prg.data_size = inp.data_size;
-    PseudoAssemblerState pas = {.pos = 0, .src = &inp};
+    PseudoAssemblerState pas = {.pos = 0, .src = &src};
 
     // TODO: handle offset padding for larger compiles
 
-    while (pas.pos < inp.statement_count) {
-        if (new_statement_count > statement_buf_size - 1) {
-            // out of space, make more
-            statement_buf_size *= 2;
-            new_statements = realloc(new_statements, statement_buf_size * sizeof(Statement));
-            printf("reallocating new_statements[]\n");
-            return prg;
-        }
-        Statement in = take_statement(&pas);
+    while (pas.pos < src.statements.ct) {
+        AStatement in = take_statement(&pas);
 
         // process the statement
-        switch (in.opcode) {
+        switch (in.op) {
         case OP_JMP: {
             // jmp rA
             // compile to mov reg to pc
             /*
                 mov pc rA
             */
-            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RPC, .a2 = in.a1, .a3 = 0};
-            populate_statement(&cmp1);
-            new_statements[new_statement_count++] = cmp1;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_MOV, REG_RPC, in.a1.val, 0));
             break;
         }
         case OP_JMI: {
@@ -58,9 +46,7 @@ Program compile_pseudo(Program inp) {
             /*
                 set pc imm
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RPC, .a2 = in.a2, .a3 = in.a3};
-            populate_statement(&cmp1);
-            new_statements[new_statement_count++] = cmp1;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RPC, in.a2.val, in.a3.val));
             break;
         }
         case OP_SWP: {
@@ -71,15 +57,9 @@ Program compile_pseudo(Program inp) {
                 mov rA rB
                 mov rB at
             */
-            Statement cmp1 = {.opcode = OP_MOV, .a1 = REG_RAT, .a2 = in.a1, .a3 = 0};
-            Statement cmp2 = {.opcode = OP_MOV, .a1 = in.a1, .a2 = in.a2, .a3 = 0};
-            Statement cmp3 = {.opcode = OP_MOV, .a1 = in.a2, .a2 = REG_RAT, .a3 = 0};
-            populate_statement(&cmp1);
-            populate_statement(&cmp2);
-            populate_statement(&cmp3);
-            new_statements[new_statement_count++] = cmp1;
-            new_statements[new_statement_count++] = cmp2;
-            new_statements[new_statement_count++] = cmp3;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_MOV, REG_RAT, in.a1.val, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_MOV, in.a1.val, in.a2.val, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_MOV, in.a2.val, REG_RAT, 0));
             break;
         }
         case OP_ADI: {
@@ -89,12 +69,8 @@ Program compile_pseudo(Program inp) {
                 set at imm
                 add rA rA at
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = in.a2, .a3 = 0};
-            Statement cmp2 = {.opcode = OP_ADD, .a1 = in.a1, .a2 = in.a1, .a3 = REG_RAT};
-            populate_statement(&cmp1);
-            populate_statement(&cmp2);
-            new_statements[new_statement_count++] = cmp1;
-            new_statements[new_statement_count++] = cmp2;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RAT, in.a2.val, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_ADD, in.a1.val, in.a1.val, REG_RAT));
             break;
         }
         case OP_SBI: {
@@ -104,12 +80,8 @@ Program compile_pseudo(Program inp) {
                 set at imm
                 sub rA rA at
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = in.a2, .a3 = 0};
-            Statement cmp2 = {.opcode = OP_SUB, .a1 = in.a1, .a2 = in.a1, .a3 = REG_RAT};
-            populate_statement(&cmp1);
-            populate_statement(&cmp2);
-            new_statements[new_statement_count++] = cmp1;
-            new_statements[new_statement_count++] = cmp2;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RAT, in.a2.val, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SUB, in.a1.val, in.a1.val, REG_RAT));
             break;
         }
         case OP_PSH: {
@@ -120,15 +92,9 @@ Program compile_pseudo(Program inp) {
                 sub sp sp at
                 stw sp rA
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD), .a3 = 0};
-            Statement cmp2 = {.opcode = OP_SUB, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = REG_RAT};
-            Statement cmp3 = {.opcode = OP_STW, .a1 = REG_RSP, .a2 = in.a1, .a3 = 0};
-            populate_statement(&cmp1);
-            populate_statement(&cmp2);
-            populate_statement(&cmp3);
-            new_statements[new_statement_count++] = cmp1;
-            new_statements[new_statement_count++] = cmp2;
-            new_statements[new_statement_count++] = cmp3;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RAT, sizeof(UWORD), 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SUB, REG_RSP, REG_RSP, REG_RAT));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_STW, REG_RSP, in.a1.val, 0));
             break;
         }
         case OP_POP: {
@@ -139,15 +105,9 @@ Program compile_pseudo(Program inp) {
                 ldw rA sp
                 add sp sp at
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD), .a3 = 0};
-            Statement cmp2 = {.opcode = OP_LDW, .a1 = in.a1, .a2 = REG_RSP, .a3 = REG_RSP};
-            Statement cmp3 = {.opcode = OP_ADD, .a1 = REG_RSP, .a2 = REG_RSP, .a3 = REG_RAT};
-            populate_statement(&cmp1);
-            populate_statement(&cmp2);
-            populate_statement(&cmp3);
-            new_statements[new_statement_count++] = cmp1;
-            new_statements[new_statement_count++] = cmp2;
-            new_statements[new_statement_count++] = cmp3;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RAT, sizeof(UWORD), 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_LDW, in.a1.val, REG_RSP, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_ADD, REG_RSP, REG_RSP, REG_RAT));
             break;
         }
         case OP_CAL: {
@@ -159,18 +119,10 @@ Program compile_pseudo(Program inp) {
                 psh ad
                 jmp rA
             */
-            Statement cmp1 = {.opcode = OP_SET, .a1 = REG_RAT, .a2 = sizeof(UWORD) * 4, .a3 = 0};
-            Statement cmp2 = {.opcode = OP_ADD, .a1 = REG_RAD, .a2 = REG_RAT, .a3 = REG_RPC};
-            Statement cmp3 = {.opcode = OP_PSH, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
-            Statement cmp4 = {.opcode = OP_JMP, .a1 = in.a1, .a2 = 0, .a3 = 0};
-            populate_statement(&cmp1);
-            populate_statement(&cmp2);
-            populate_statement(&cmp3);
-            populate_statement(&cmp4);
-            new_statements[new_statement_count++] = cmp1;
-            new_statements[new_statement_count++] = cmp2;
-            new_statements[new_statement_count++] = cmp3;
-            new_statements[new_statement_count++] = cmp4;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RAT, sizeof(UWORD) * 4, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_ADD, REG_RAD, REG_RAT, REG_RPC));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_PSH, REG_RAD, 0, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_JMP, in.a1.val, 0, 0));
             break;
         }
         case OP_RET: {
@@ -180,22 +132,17 @@ Program compile_pseudo(Program inp) {
                 pop ad
                 jmp ad
             */
-            Statement cmp1 = {.opcode = OP_POP, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
-            Statement cmp2 = {.opcode = OP_JMP, .a1 = REG_RAD, .a2 = 0, .a3 = 0};
-            populate_statement(&cmp1);
-            populate_statement(&cmp2);
-            new_statements[new_statement_count++] = cmp1;
-            new_statements[new_statement_count++] = cmp2;
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_POP, REG_RAD, 0, 0));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_JMP, REG_RAD, 0, 0));
             break;
             break;
         }
         default:
             // copy instruction
-            new_statements[new_statement_count++] = in; // advance counter
+            buf_push_AStatement(&prg.statements, in);
             break;
         }
     }
 
-    prg.statement_count = new_statement_count;
     return prg;
 }

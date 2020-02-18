@@ -33,15 +33,30 @@ typedef struct {
     ValueSource a1, a2, a3;
 } AStatement;
 
+#define IMM_STATEMENT(OPCODE, A1, A2, A3)                                                                              \
+    (AStatement) {                                                                                                     \
+        .op = OPCODE, .a1 = (ValueSource){.kind = VS_IMM, .val = A1}, .a2 = (ValueSource){.kind = VS_IMM, .val = A2},  \
+        .a3 = (ValueSource) {                                                                                          \
+            .kind = VS_IMM, .val = A3                                                                                  \
+        }                                                                                                              \
+    }
+
 BUFFIE_OF(AStatement)
 
 typedef struct {
     Buffie_AStatement statements;
     uint16_t entry;
-    int status;
     BYTE *data;
     uint16_t data_size;
-} Program;
+    int status;
+} SourceProgram;
+
+typedef struct {
+    Instruction *instructions;
+    uint16_t instruction_count;
+    BYTE *data;
+    uint16_t data_size;
+} CompiledProgram;
 
 typedef struct {
     LexResult *lexed;
@@ -56,9 +71,8 @@ typedef struct {
     int offset;
 } Label;
 
-void program_init(Program *p) {
+void source_program_init(SourceProgram *p) {
     buf_alloc_AStatement(&p->statements, 128);
-    p->entry = 0;
     p->status = 0;
     p->data = NULL;
     p->data_size = 0;
@@ -175,10 +189,10 @@ uint32_t parse_numeric(ParserState *st) {
     return val;
 }
 
-Program parse(LexResult lexed) {
+SourceProgram parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
-    Program prg;
-    program_init(&prg);
+    SourceProgram src;
+    source_program_init(&src);
 
     List labels;
     st.labels = &labels;
@@ -208,16 +222,16 @@ Program parse(LexResult lexed) {
                 // pack_len = pack_len / 2;              // divide by two because 0xff = 1 byte
                 // BYTE *pack_data = datahex(pack.cont); // convert data from hex
                 // // write the pack data to the binary
-                // if (!prg.data) {
-                //     prg.data = malloc(sizeof(BYTE) * pack_len);
+                // if (!src.data) {
+                //     src.data = malloc(sizeof(BYTE) * pack_len);
                 // } else {
-                //     prg.data = realloc(prg.data, sizeof(BYTE) * (prg.data_size + pack_len));
+                //     src.data = realloc(src.data, sizeof(BYTE) * (src.data_size + pack_len));
                 // }
                 // // copy the data
-                // memcpy(prg.data + prg.data_size, pack_data, pack_len);
+                // memcpy(src.data + src.data_size, pack_data, pack_len);
                 // free(pack_data); // free decoded data
                 // // update offset
-                // prg.data_size += pack_len;
+                // src.data_size += pack_len;
                 // st.offset += pack_len;
                 // printf("data block, len: $%04x\n", (UWORD)pack_len);
             }
@@ -228,41 +242,30 @@ Program parse(LexResult lexed) {
         }
         default:
             printf("ERR: unexpected token #%d\n", st.token);
-            prg.status = 1;
+            src.status = 1;
             parser_state_cleanup(&st);
-            return prg;
+            return src;
         }
     }
 
     // check for entry point label
     if (entry_lbl) {
         // find the matching label and replace with label offset
-        ListNode *n = labels.top;
-        uint16_t lb_offset = 0;
-        do {
-            Label *lb = (Label *)(n->data);
-            if (streq(lb->label, entry_lbl)) {
-                lb_offset = lb->offset;
-                break;
-            }
-            n = n->link;
-        } while (n);
-        // set entrypoint to label offset
-        prg.entry = lb_offset;
+        // TODO: make this work
     }
 
     parser_state_cleanup(&st);
 
     // update program information
-    return prg;
+    return src;
 }
 
-void free_program(Program prg, bool free_data) {
+void free_source_program(SourceProgram src, bool free_data) {
     // free statement buffer
-    buf_free_AStatement(&prg.statements);
-    if (free_data && prg.data) {
+    buf_free_AStatement(&src.statements);
+    if (free_data && src.data) {
         // free data
-        free(prg.data);
+        free(src.data);
     }
 }
 
@@ -291,49 +294,28 @@ void write_instruction(FILE *ouf, Instruction *in) {
     fwrite(&w, sizeof(w), 1, ouf);
 }
 
-void write_program(FILE *ouf, Program prg, bool compat) {
+void write_compiled_program(FILE *ouf, CompiledProgram cmp) {
     char w = '\0';
-    if (compat) {
-        printf("[COMPAT] on\n");
-    } else { // write header
-        const char *REG = "rg";
-        fputs(REG, ouf);                               // magic
-        fwrite(&prg.entry, sizeof(prg.entry), 1, ouf); // entrypoint
-        uint16_t code_size = prg.statements.ct * INSTR_SIZE;
-        fwrite(&code_size, sizeof(code_size), 1, ouf);         // code size
-        fwrite(&prg.data_size, sizeof(prg.data_size), 1, ouf); // data size
-        printf("header[%d] \n", HEADER_SIZE);
-    }
 
     // write data
-    if (prg.data) {
-        for (int i = 0; i < prg.data_size; i++) {
-            w = prg.data[i];
+    if (cmp.data) {
+        for (int i = 0; i < cmp.data_size; i++) {
+            w = cmp.data[i];
             fwrite(&w, sizeof(w), 1, ouf);
         }
-        printf("data[%d] \n", (int)prg.data_size);
+        printf("data[%d] \n", (int)cmp.data_size);
     }
 
     // write code
     size_t code_offset = 0;
 
-    // if bare/compat mode, write a jmp to the entrypoint
-    // TODO: this currently breaks all offsets
-    // if (compat) {
-    //     UWORD jmp_trg = INSTR_SIZE + prg.entry;
-    //     printf("[COMPAT] inserting entrypoint jump to $%04x\n", jmp_trg);
-    //     Statement jmp = {.opcode = OP_SET, .a1 = REG_RPC, .a2 = jmp_trg, .a3 = 0};
-    //     populate_statement(&jmp);
-    //     write_instruction(ouf, &jmp);
-    //     code_offset += jmp.sz;
-    // }
-
-    // TODO: write instructions
-    // for (int i = 0; i < prg.statement_count; i++) {
-    //     Statement st = prg.statements[i];
-    //     write_instruction(ouf, &st);
-    //     code_offset += st.sz;
-    // }
+    // write instructions
+    for (int i = 0; i < cmp.instruction_count; i++) {
+        Instruction in = cmp.instructions[i];
+        InstructionInfo info = get_instruction_info_op(in.opcode);
+        write_instruction(ouf, &in);
+        code_offset += info.sz;
+    }
     printf("code[%d] \n", (int)code_offset);
 }
 
@@ -371,18 +353,19 @@ void dump_instruction(Instruction in, bool rich) {
     printf("\n");
 }
 
-void dump_program(Program prg, bool rich) {
-    printf("entry:     $%04x\n", prg.entry);
-    uint16_t code_size = prg.statement_count * INSTR_SIZE;
+void dump_source_program(SourceProgram src, bool rich) {
+    printf("entry:     $%04x\n", src.entry);
+    uint16_t code_size = src.statements.ct * INSTR_SIZE;
     printf("code size: $%04x\n", code_size);
-    printf("data size: $%04x\n", prg.data_size);
-    int offset = HEADER_SIZE + prg.data_size;
-    for (int i = 0; i < prg.statement_count; i++) {
-        Statement st = prg.statements[i];
+    printf("data size: $%04x\n", src.data_size);
+    int offset = HEADER_SIZE + src.data_size;
+    for (int i = 0; i < src.statements.ct; i++) {
+        AStatement st = buf_get_AStatement(&src.statements, i);
+        InstructionInfo info = get_instruction_info_op(st.op);
         if (rich)
             printf("%04x ", offset);
         dump_statement(st, rich);
-        offset += st.sz;
+        offset += info.sz;
     }
 }
 

@@ -255,6 +255,11 @@ const char *get_instruction_mnem(OPCODE op) {
     }
 }
 
+InstructionInfo get_instruction_info_op(OPCODE opcode) {
+    const char* mnem = get_instruction_mnem(opcode);
+    return get_instruction_info(mnem);
+}
+
 #define REG(num) REG_R##num
 #define REG_STREQ(num)                                                                                                 \
     else if (streq(mnem, "r" #num)) {                                                                                  \

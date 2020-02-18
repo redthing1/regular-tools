@@ -61,7 +61,7 @@ Program decode_program(char *buf, size_t buf_sz) {
     Statement *statements = malloc(statement_buf_size * sizeof(Statement));
     int statement_count = 0;
     Program prg;
-    program_init(&prg);
+    source_program_init(&prg);
     prg.data_size = hd.data_size;
     prg.statements = statements;
     prg.entry = hd.entry;
