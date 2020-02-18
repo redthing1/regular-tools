@@ -5,6 +5,7 @@
 
 typedef struct {
     bool compat;
+    bool debug_tokens;
 } AssemblerOptions;
 
 int main(int argc, char **argv) {
@@ -17,6 +18,7 @@ int main(int argc, char **argv) {
 
     AssemblerOptions options = {
         .compat = false,
+        .debug_tokens = false,
     };
 
     for (int i = 3; i < argc; i++) {
@@ -24,6 +26,10 @@ int main(int argc, char **argv) {
         if (streq(flg, "--compat")) {
             options.compat = true;
             printf("enabling compatibility mode\n");
+        }
+        if (streq(flg, "--debug-tokens")) {
+            options.debug_tokens = true;
+            printf("token dumping enabled\n");
         }
     }
 
@@ -46,11 +52,13 @@ int main(int argc, char **argv) {
 
     // run lexer on the input text
     LexResult lex_result = lex(inf_read.content, inf_read.size);
-    printf("== TOKENS ==\n");
-    for (int i = 0; i < lex_result.token_count; i++) {
-        Token tok = buf_get_Token(&lex_result.tokens, i);
-        // print token
-        printf("%4d TOK: %10s [%3d]\n", i, tok.cont, (int)tok.kind);
+    if (options.debug_tokens) {
+        printf("== TOKENS ==\n");
+        for (int i = 0; i < lex_result.token_count; i++) {
+            Token tok = buf_get_Token(&lex_result.tokens, i);
+            // print token
+            printf("%4d TOK: %10s [%3d]\n", i, tok.cont, (int)tok.kind);
+        }
     }
     // parse the tokens into a program
     printf("== PARSE ==\n");
@@ -70,7 +78,7 @@ int main(int argc, char **argv) {
     Program prg_out = compile_pseudo(prg_pass1);
     free_program(prg_hl, false);
     free_program(prg_pass1, false);
-    
+
     // dump the finished program
     printf("== DUMP [fin] ==\n");
     dump_program(prg_out, true);
