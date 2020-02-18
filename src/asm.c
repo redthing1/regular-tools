@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     LexResult lex_result = lex(inf_read.content, inf_read.size);
     printf("== TOKENS ==\n");
     for (int i = 0; i < lex_result.token_count; i++) {
-        Token tok = lex_result.tokens[i];
+        Token tok = buf_get_Token(&lex_result.tokens, i);
         // print token
         printf("%4d TOK: %10s [%3d]\n", i, tok.cont, (int)tok.kind);
     }

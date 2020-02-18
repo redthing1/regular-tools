@@ -37,8 +37,10 @@ typedef struct {
 
 /* #region Lexer */
 
+BUFFIE_OF(Token)
+
 typedef struct {
-    Token *tokens;
+    Buffie_Token tokens;
     int token_count;
 } LexResult;
 
@@ -125,17 +127,11 @@ void skip_until(LexerState *st, char until) {
 
 LexResult lex(char *buf, size_t buf_sz) {
     LexerState st = {.buf = buf, .size = buf_sz, .pos = 0, .line = 1, .line_start = 0};
-    int token_buf_size = 256;
-    Token *tokens = malloc(token_buf_size * sizeof(Token));
-    int token_count = 0;
+    Buffie_Token tokens;
+    buf_alloc_Token(&tokens, 256);
     char *working = NULL;
 
     while (st.pos < st.size) {
-        if (token_count >= token_buf_size) {
-            token_buf_size *= 2;
-            tokens = realloc(tokens, token_buf_size * sizeof(Token));
-            printf("reallocating tokens[]\n");
-        }
         skip_chars(&st, SPACE);         // skip any leading whitespace
         while (peek_char(&st) == ';') { // comments
             skip_until(&st, '\n');      // ignore the rest of the line
@@ -152,33 +148,33 @@ LexResult lex(char *buf, size_t buf_sz) {
         if ((c_type & ALPHA) > 0) { // start of identifier
             take_chars(&st, working, IDENTIFIER);
             Token tok = {.kind = IDENTIFIER, .cont = working};
-            tokens[token_count++] = tok;
+            buf_push_Token(&tokens, tok);
         } else if ((c_type & NUMERIC) > 0) { // start of num literal
             take_chars(&st, working, NUMERIC);
             Token tok = {.kind = NUMERIC, .cont = working};
-            tokens[token_count++] = tok;
+            buf_push_Token(&tokens, tok);
         } else if ((c_type & ARGSEP) > 0) {
             take_chars(&st, working, ARGSEP);
             Token tok = {.kind = ARGSEP, .cont = working};
-            tokens[token_count++] = tok;
+            buf_push_Token(&tokens, tok);
         } else if ((c_type & MARK) > 0) {
             take_chars(&st, working, MARK);
             Token tok = {.kind = MARK, .cont = working};
-            tokens[token_count++] = tok;
+            buf_push_Token(&tokens, tok);
         } else if ((c_type & NUM_SPECIAL) > 0) {
             take_chars(&st, working, NUMERIC_CONSTANT);
             Token tok = {.kind = NUMERIC_CONSTANT, .cont = working};
-            tokens[token_count++] = tok;
+            buf_push_Token(&tokens, tok);
         } else if ((c_type & PACK_START) > 0) {
             take_char(&st); // eat pack start
             // hex data after start indicator
             take_chars(&st, working, PACK);
             Token tok = {.kind = PACK, .cont = working};
-            tokens[token_count++] = tok;
+            buf_push_Token(&tokens, tok);
         } else if ((c_type & DIRECTIVE_PREFIX) > 0) {
             take_chars(&st, working, DIRECTIVE);
             Token tok = {.kind = DIRECTIVE, .cont = working};
-            tokens[token_count++] = tok;
+            buf_push_Token(&tokens, tok);
         } else {
             fprintf(stderr, "unrecognized character: %c, [%d:%d]\n", c, st.line, (int)(st.pos - st.line_start) + 1);
             take_char(&st); // eat the character
@@ -186,17 +182,18 @@ LexResult lex(char *buf, size_t buf_sz) {
     }
     LexResult res;
     res.tokens = tokens;
-    res.token_count = token_count;
+    res.token_count = tokens.ct;
     return res;
 }
 
 void free_lex_result(LexResult lexed) {
     // free all tokens
     for (int i = 0; i < lexed.token_count; i++) {
-        free(lexed.tokens[i].cont);
+        Token tok = buf_get_Token(&lexed.tokens, i);
+        free(tok.cont);
     }
-    // free token array
-    free(lexed.tokens);
+    // free token buffie
+    buf_free_Token(&lexed.tokens);
 }
 
 /* #endregion */
@@ -246,7 +243,7 @@ Token peek_token(ParserState *st) {
     if (st->token > st->lexed->token_count - 1) {
         return (Token){.kind = UNKNOWN};
     }
-    return st->lexed->tokens[st->token];
+    return buf_get_Token(&st->lexed->tokens, st->token);
 }
 
 Token take_token(ParserState *st) {
@@ -291,8 +288,10 @@ uint16_t parse_label_ref(ParserState *st, Token mark, char *prev) {
         patch_cbuf[0] = '\0';
         sprintf(patch_cbuf, ".%d", lb_offset);
 
-        st->lexed->tokens[st->token].cont = patch_cbuf;
-        st->lexed->tokens[st->token].kind = NUMERIC_CONSTANT;
+        Token patch_tok = buf_get_Token(&st->lexed->tokens, st->token);
+        patch_tok.cont = patch_cbuf;
+        patch_tok.kind = NUMERIC_CONSTANT;
+        buf_set_Token(&st->lexed->tokens, st->token, patch_tok);
 
         return lb_offset;
     } else {
@@ -396,17 +395,11 @@ Statement parse_statement(ParserState *st, char *mnem) {
     return stmt;
 }
 
-DECLARE_BUFFIE_STRUCT(int)
-DECLARE_BUFFIE_FUNCS(int)
-
 Program parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
     int statement_buf_size = 128;
     Statement *statements = malloc(statement_buf_size * sizeof(Statement));
     int statement_count = 0;
-
-    Buffie_int int_buf;
-    buf_allocate_int(&int_buf, 4);
 
     Program prg;
     program_init(&prg);
