@@ -45,9 +45,7 @@ int convert_dec_to(int val, int base) {
     return (val % base) + 10 * convert_dec_to(val / base, base);
 }
 
-void util_getln(char* buf, int n) {
-    fgets(buf, n, stdin);
-}
+void util_getln(char *buf, int n) { fgets(buf, n, stdin); }
 
 // https://stackoverflow.com/questions/3408706/hexadecimal-string-to-byte-array-in-c/35452093#35452093
 uint8_t *datahex(char *str) {
@@ -96,4 +94,10 @@ void reverse_bytes(uint8_t *start, int size) {
         *lo++ = *hi;
         *hi-- = swap;
     }
+}
+
+char *util_strmk(size_t size) {
+    char *str = malloc(size);
+    str[0] = '\0';
+    return str;
 }

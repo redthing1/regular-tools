@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util.h"
 #include "buffie.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -127,17 +128,12 @@ Token make_token_of(LexerState *st, char *working, CharType type) {
     return tok;
 }
 
-char *create_working() {
-    char* working = malloc(128);
-    working[0] = '\0';
-    return working;
-}
-
 LexResult lex(char *buf, size_t buf_sz) {
     LexerState st = {.buf = buf, .size = buf_sz, .pos = 0, .line = 1, .line_start = 0};
     Buffie_Token tokens;
     buf_alloc_Token(&tokens, 256);
     char *working = NULL;
+    size_t TOKEN_STR_SIZE = 128;
 
     while (st.pos < st.size) {
         skip_chars(&st, SPACE);         // skip any leading whitespace
@@ -150,7 +146,7 @@ LexResult lex(char *buf, size_t buf_sz) {
         }
         // process character
         char c = peek_char(&st);
-        working = create_working();
+        working = util_strmk(TOKEN_STR_SIZE);
 
         CharType c_type = classify_char(c);
         if ((c_type & ALPHA) > 0) { // start of identifier
@@ -170,7 +166,7 @@ LexResult lex(char *buf, size_t buf_sz) {
         } else if ((c_type & PACK_START) > 0) { // start of a pack, read in pack context
             buf_push_Token(&tokens, make_token_of(&st, working, PACK_START));
 
-            working = create_working(); // reallocate working
+            working = util_strmk(TOKEN_STR_SIZE); // reallocate working
 
             CharType pack_escape = peek_chartype(&st);
             if (pack_escape == QUOT) { // \'
