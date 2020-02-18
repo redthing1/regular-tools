@@ -5,8 +5,8 @@ provides lexer and parser for the assembler
 
 #pragma once
 
-#include "ds.h"
 #include "buffie.h"
+#include "ds.h"
 #include "instr.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -24,6 +24,8 @@ typedef enum {
     DIRECTIVE_PREFIX = 1 << 6, // '#'
     NUMERIC_HEX = 1 << 7,      // beef
     PACK_START = 1 << 8,       // '\'
+    QUOT = 1 << 9,             // '''
+    BIND = 1 << 10,            // '@'
     IDENTIFIER = ALPHA | NUMERIC,
     DIRECTIVE = DIRECTIVE_PREFIX | ALPHA,
     NUMERIC_CONSTANT = NUMERIC | NUMERIC_HEX | NUM_SPECIAL,
@@ -58,6 +60,10 @@ CharType classify_char(char c) {
         return ARGSEP;
     case ':':
         return MARK;
+    case '\'':
+        return QUOT;
+    case '@':
+        return BIND;
     case '#':
         return DIRECTIVE_PREFIX;
     case '\\':
