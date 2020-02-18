@@ -1,6 +1,10 @@
 project('regular-tools',
     'c',
-    default_options: ['c_std=c18']
+    default_options: [
+        'c_std=c18',
+        'warning_level=3',
+        'werror=true'
+    ]
 )
 
 disasm_sources = [
