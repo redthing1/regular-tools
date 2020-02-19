@@ -1,4 +1,6 @@
-; test a fibonacci
+; recursive implementation of fib(n)
+; n is specified in r1 in ::main
+; result is placed in r7
 
 #entry :main
 
@@ -74,7 +76,7 @@ main:
     set r14 $00 ; GLB: default slot value
 
     set r1 .10 ; n
-    psh r1    ; n (arg1)
+    psh r1     ; n (arg1)
     psh r14    ; slot
 
     set r4 ::fib
