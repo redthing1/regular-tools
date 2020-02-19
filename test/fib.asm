@@ -2,7 +2,8 @@
 
 #entry :main
 
-jl@ rA v_cmp v_loc : ; less means sign = 1
+jl@ rA v_cmp v_loc : ; jump to v_loc if rA < v_cmp
+    ; less means sign = 1
     set at v_cmp ; the compare target (zero)
     tcu ad at rA ; -1, 0, 1 depending on comparison
     set at $4
@@ -72,7 +73,7 @@ fib_base_case: ; F(n) := n
 main:
     set r14 $00 ; GLB: default slot value
 
-    set r1 $6 ; n
+    set r1 .10 ; n
     psh r1    ; n (arg1)
     psh r14    ; slot
 
