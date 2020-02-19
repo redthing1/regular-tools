@@ -225,13 +225,9 @@ ValueSource read_value_arg(ParserState *st) {
 }
 
 AStatement read_statement(ParserState *pst, const char *mnem) {
+    // given guaranteed validation of opcode
     InstructionInfo info = get_instruction_info(mnem);
     AStatement stmt = IMM_STATEMENT(info.opcode, 0, 0, 0);
-    if (info.type == INSTR_INV) {
-        // invalid mnemonic
-        printf("unrecognized mnemonic: %s\n", mnem);
-        return stmt; // an invalid instruction statement
-    }
     stmt.op = info.opcode;
 
     // read the instruction data
@@ -258,6 +254,10 @@ AStatement read_statement(ParserState *pst, const char *mnem) {
     return stmt;
 }
 
+void read_macro_statement(ParserState *pst, Buffie_AStatement statements, MacroDef *md) {
+    // unroll and expand the macro
+}
+
 void define_macro(ParserState *st, const char *name) {
     MacroDef def;
     def.name = util_strdup(name);
@@ -275,6 +275,20 @@ void define_macro(ParserState *st, const char *name) {
     }
     expect_token(st, MARK); // eat the mark
     // TODO: interpret the macro body
+}
+
+MacroDef resolve_macro(ParserState *pst, const char *name) {
+    MacroDef md;
+    md.name = NULL;
+    // find the defined macro
+    for (size_t i = 0; i < pst->macros.ct; i++) {
+        MacroDef md = buf_get_MacroDef(&pst->macros, i);
+        if (streq(md.name, name)) {
+            return md;
+        }
+    }
+    // we do not throw an error, the caller will handle that if name is null
+    return md;
 }
 
 void define_label(ParserState *st, const char *name) {
@@ -331,7 +345,7 @@ SourceProgram parse(LexResult lexed) {
                     pack_len = strlen(pack.cont);
                     if (pack_len % 2 != 0) {
                         // odd number of half-bytes, invalid
-                        printf("ERROR: invalid data (must be even)");
+                        printf("ERROR: invalid data (must be even)\n");
                     }
                     pack_len = pack_len / 2;              // divide by two because 0xff = 1 byte
                     BYTE *pack_data = datahex(pack.cont); // convert data from hex
@@ -380,12 +394,21 @@ SourceProgram parse(LexResult lexed) {
                 break;
             }
             default: { // instruction
+                const char *mnem = iden.cont;
+                InstructionInfo info = get_instruction_info(mnem);
+                if (info.type == INSTR_INV) {               // didn't match standard instruction names
+                    MacroDef md = resolve_macro(&st, mnem); // check if a matching macro exists
+                    if (!md.name) {                         // invalid mnemonic
+                        printf("unrecognized mnemonic: %s\n", mnem);
+                    }
+                    // expand the macro
+                    read_macro_statement(&st, src.statements, &md);
+                }
+
                 read_statement(&st, iden.cont);
                 break;
             }
             }
-            // TODO: handle id
-            take_token(&st); // eat the tok
             break;
         }
         default:

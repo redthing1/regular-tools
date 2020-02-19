@@ -11,10 +11,10 @@
 
 ; data must appear before code
 data0:
-    #d \x $22000000 ; $22 in little endian
+    #d \x 22000000 ; $22 in little endian
 data1:
     #d \' hello ; data string support
-    #d \x $00 ; null terminator
+    #d \x 00 ; null terminator
 
 ; use BIND ("@") to define a macro
 ; the argument list is followed by MARK (":")
