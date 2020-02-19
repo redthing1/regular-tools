@@ -18,14 +18,15 @@ data1:
 
 ; use BIND ("@") to define a macro
 ; the argument list is followed by MARK (":")
-add2@ rA rB rC : ; this macro sets rA = rB + rC
-    add rA rB rC
+add2@ rA rB v0 : ; this macro sets rA = rB + v0
+    set ad v0
+    add rA rB ad
 ::
 
 main:
-    set r1 $8
+    set r1 $0
     set r2 $4
-    add2 r2 r2 r1
+    add2 r2 r2 $8
     ; labels can be ahead-referenced
     ; any relative offsets will be resolved later
     set r4 ::func1

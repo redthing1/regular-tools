@@ -155,14 +155,12 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
-uint32_t parse_numeric(ParserState *st) {
-    // interpret numeric token
-    Token num_tok = expect_token(st, NUMERIC_CONSTANT);
-    char pfx = num_tok.cont[0];
+uint32_t parse_numeric(const char* num) { // interpret numeric constant
+    char pfx = num[0];
     // create a new string without the prefix
-    int num_len = strlen(num_tok.cont) - 1;
+    int num_len = strlen(num) - 1;
     char *num_str = malloc(num_len + 1);
-    strncpy(num_str, num_tok.cont + 1, num_len);
+    strncpy(num_str, num + 1, num_len);
     num_str[num_len] = '\0';
     // convert base
     uint32_t val = 0;
@@ -198,39 +196,16 @@ ValueSource read_value_arg(ParserState *st) {
         Token pk_offset = peek_token(st);
         if (pk_offset.kind == OFFSET) {
             expect_token(st, OFFSET); // eat the offset token
-            uint32_t offset_val = parse_numeric(st);
+            Token num_tok = expect_token(st, NUMERIC_CONSTANT);
+            uint32_t offset_val = parse_numeric(num_tok.cont);
             vs.ref.add_offset = offset_val;
         }
         return vs;
     } else if (next.kind == NUMERIC_CONSTANT) {
         // interpret numeric token
         Token num_tok = expect_token(st, NUMERIC_CONSTANT);
-        char prefix = num_tok.cont[0];
-        // create a new string without the prefix
-        int num_len = strlen(num_tok.cont) - 1;
-        char *num_str = malloc(num_len + 1);
-        strncpy(num_str, num_tok.cont + 1, num_len);
-        num_str[num_len] = '\0';
-        // convert base
-        uint32_t val = 0;
-        switch (prefix) {
-        case '$': {
-            // interpret as base-16
-            val = (int)strtol(num_str, NULL, 16);
-            break;
-        }
-        case '.': {
-            // interpret as base-10
-            val = atoi(num_str);
-            break;
-        }
-        default:
-            // invalid numeric
-            printf("ERR: invalid numeric prefix %c", prefix);
-        }
-        free(num_str); // free numstr
         vs.kind = VS_IMM;
-        vs.val = val;
+        vs.val = parse_numeric(num_tok.cont);
         return vs;
     } else {
         printf("ERR: unrecognized token %s for value arg\n", next.cont);
@@ -241,32 +216,42 @@ ValueSource read_value_arg(ParserState *st) {
 AStatement read_statement(ParserState *pst, const char *mnem, const char *a1, const char *a2, const char *a3) {
     // given guaranteed validation of opcode
     InstructionInfo info = get_instruction_info(mnem);
-    AStatement raw_stmt = IMM_STATEMENT(info.opcode, 0, 0, 0);
-    raw_stmt.op = info.opcode;
+    AStatement stmt = IMM_STATEMENT(info.opcode, 0, 0, 0);
+    stmt.op = info.opcode;
 
     // read the instruction data
     if ((info.type & INSTR_K_R1) > 0) {
-        raw_stmt.a1 = IMM_ARG(get_register(a1));
+        stmt.a1 = IMM_ARG(get_register(a1));
     }
     if ((info.type & INSTR_K_R2) > 0) {
-        raw_stmt.a2 = IMM_ARG(get_register(a2));
+        stmt.a2 = IMM_ARG(get_register(a2));
     }
     if ((info.type & INSTR_K_R3) > 0) {
-        raw_stmt.a3 = IMM_ARG(get_register(a3));
+        stmt.a3 = IMM_ARG(get_register(a3));
     }
 
     if ((info.type & INSTR_K_I1) > 0) {
-        raw_stmt.a1 = read_value_arg(pst);
+        if (a1)
+            stmt.a1 = IMM_ARG(parse_numeric(a1));
+        else
+            stmt.a1 = read_value_arg(pst);
     } else if ((info.type & INSTR_K_I2) > 0) {
-        raw_stmt.a2 = read_value_arg(pst);
+        if (a2)
+            stmt.a2 = IMM_ARG(parse_numeric(a2));
+        else
+            stmt.a2 = read_value_arg(pst);
     } else if ((info.type & INSTR_K_I3) > 0) {
-        raw_stmt.a3 = read_value_arg(pst);
+        if (a3)
+            stmt.a3 = IMM_ARG(parse_numeric(a3));
+        else
+            stmt.a3 = read_value_arg(pst);
     }
 
-    return raw_stmt;
+    return stmt;
 }
 
 int match_macro_argdef(MacroDef *md, const char *arg) {
+    if (!arg) return -1;
     for (size_t i = 0; i < md->args.ct; i++) {
         MacroArg arg_def = buf_get_MacroArg(&md->args, i);
         if (streq(arg_def.name, arg)) {
@@ -338,14 +323,14 @@ void define_macro(ParserState *st, const char *name) {
                                       // we don't support referencing macros within macros
             printf("unrecognized mnemonic: %s\n", mnem);
         } else {
-            if ((info.type & INSTR_K_R1) > 0) {
-                a1 = expect_token(st, IDENTIFIER).cont;
+            if ((info.type & (INSTR_K_R1 | INSTR_K_I1)) > 0) {
+                a1 = take_token(st).cont;
             }
-            if ((info.type & INSTR_K_R2) > 0) {
-                a2 = expect_token(st, IDENTIFIER).cont;
+            if ((info.type & (INSTR_K_R2 | INSTR_K_I2)) > 0) {
+                a2 = take_token(st).cont;
             }
-            if ((info.type & INSTR_K_R3) > 0) {
-                a3 = expect_token(st, IDENTIFIER).cont;
+            if ((info.type & (INSTR_K_R3 | INSTR_K_I3)) > 0) {
+                a3 = take_token(st).cont;
             }
         }
         RawStatement raw_stmt = (RawStatement){.mnem = mnem, .a1 = a1, .a2 = a2, .a3 = a3};
@@ -520,9 +505,9 @@ SourceProgram parse(LexResult lexed) {
                     }
                 }
 
-                AStatement raw_stmt = read_statement(&st, iden.cont, a1, a2, a3); // read statement
-                buf_push_AStatement(&src.statements, raw_stmt);                   // push statement
-                st.offset += info.sz;                                             // update code offset
+                AStatement stmt = read_statement(&st, iden.cont, a1, a2, a3); // read statement
+                buf_push_AStatement(&src.statements, stmt);                   // push statement
+                st.offset += info.sz;                                         // update code offset
             }
             break;
         }
