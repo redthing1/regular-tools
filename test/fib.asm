@@ -35,7 +35,6 @@ fib:
     jl r11 $2 ::fib_base_case
     ; F(n) := F(n-1) + F(n-2)
 
-
     ; calculate F(n-1)
     set r2 $1
     sub r1 r1 r2 ; r1 = (n-1)
@@ -43,7 +42,6 @@ fib:
     psh r14 ; slot
     set r4 ::fib
     cal r4
-    ; int r21
     pop r3  ; r3 <- result
     pop r1 ; pop (n-1) -> r1
 
@@ -56,7 +54,6 @@ fib:
     psh r14 ; slot
     set r4 ::fib
     cal r4
-    ; int r21
     pop r4 ; r4 <- result
     pop r1 ; pop (n - 2) -> r1
 
@@ -70,11 +67,9 @@ fib:
 
 fib_base_case: ; F(n) := n
     put_stk $4 r11
-    ; int r21
     ret
 
 main:
-    set r21 $05 ; GLB: break interrupt code
     set r14 $00 ; GLB: default slot value
 
     set r1 $6 ; n
