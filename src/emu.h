@@ -16,6 +16,8 @@ const size_t SIMPLE_REGISTER_COUNT = 8;
 #define INTERRUPT_DUMPCPU 0x02 // dump cpu state
 #define INTERRUPT_DUMPMEM 0x03 // dump memory page
 #define INTERRUPT_DUMPSTK 0x04 // dump stack
+#define INTERRUPT_BREAK 0x05   // debug break
+#define INTERRUPT_CONT 0x06   // debug continue
 
 typedef struct {
     UWORD *reg;
@@ -150,6 +152,15 @@ void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
                          emu_st->mem[addr + 3] << 24;
             printf(" %0x", data);
         }
+        break;
+    }
+    case INTERRUPT_BREAK: {
+        emu_st->debug = true;
+        emu_st->onestep = true;
+        break;
+    }
+    case INTERRUPT_CONT: {
+        emu_st->onestep = false;
         break;
     }
     default: {
@@ -326,9 +337,11 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
             CMD_INTERRUPT(cpu, INTERRUPT_DUMPCPU)
             CMD_INTERRUPT(mem, INTERRUPT_DUMPMEM)
             CMD_INTERRUPT(stk, INTERRUPT_DUMPSTK)
+            CMD_INTERRUPT(cont, INTERRUPT_CONT)
             else {
                 printf("unknown command\n");
             }
         }
     }
+    printf("stopped executing after %ld ticks.\n", emu_st->ticks);
 }

@@ -2,38 +2,89 @@
 
 #entry :main
 
-func_add: ; add(a, b) => a + b
-    ; get arg1 [sp+4] -> r5
+jl@ rA v_cmp v_loc : ; less means sign = 1
+    set at v_cmp ; the compare target (zero)
+    tcu ad at rA ; -1, 0, 1 depending on comparison
     set at $4
-    add r1 sp at
-    ldw r5 r1
-    ; get arg2 [sp+8] -> r6
-    set at $8
-    add r1 sp at
-    ldw r6 r1
-    add r5 r5 r6 ; compute result -> r5
-    ; return (arg1 + arg2) to [sp-4]
-    set at $4
-    sub r1 sp at
-    stw r1 r5 ; store return value (r5)
-    int r7 ; dumpstk
+    add ad ad ad ; -2, 0, 2
+    add ad ad ad ; -4, 0, 4
+    add ad ad at ;  0, 4, 8
+    add ad ad at ;  4, 8, 12
+    add pc pc ad ; skip 1, 2, 3 instructions
+    nop
+    nop
+    add pc pc at ; skip the jump
+    jmi v_loc
+::
+
+get_stk@ rA v_offset :
+    set at v_offset
+    add at sp at
+    ldw rA at
+::
+
+put_stk@ v_offset rA :
+    set at v_offset
+    add at sp at
+    stw at rA
+::
+
+fib:
+    get_stk r11 $8 ; n (arg1)
+    ; branch if n < 2
+    jl r11 $2 ::fib_base_case
+    ; F(n) := F(n-1) + F(n-2)
+
+
+    ; calculate F(n-1)
+    set r2 $1
+    sub r1 r1 r2 ; r1 = (n-1)
+    psh r1 ; (n-1) (arg1)
+    psh r14 ; slot
+    set r4 ::fib
+    cal r4
+    ; int r21
+    pop r3  ; r3 <- result
+    pop r1 ; pop (n-1) -> r1
+
+    ; save our r3
+    psh r3
+
+    ; calculate F(n-2)
+    sub r1 r1 r2 ; r1 = (n-2)
+    psh r1 ; (n-2) (arg1)
+    psh r14 ; slot
+    set r4 ::fib
+    cal r4
+    ; int r21
+    pop r4 ; r4 <- result
+    pop r1 ; pop (n - 2) -> r1
+
+    ; retrieve our r3
+    pop r3
+
+    add r5 r3 r4 ; r5 = F(n)
+    put_stk $4 r5 ; r5 -> slot
+
+    ret
+
+fib_base_case: ; F(n) := n
+    put_stk $4 r11
+    ; int r21
     ret
 
 main:
-    set r2 $0015 ; arg2 (21 DEC)
-    psh r2
-    set r1 $0013 ; arg1 (19 DEC)
-    psh r1
-    set r7 $4
-    int r7 ; dumpstk
-    set r4 ::func_add
-    cal r4
-    ; get the return value from [sp-8]
-    set at $8
-    sub r1 sp at
-    ldw r5 r1 ; put the return value into r5
-    ; tear down arguments
-    pop r1
-    pop r2
-    int r7 ; dumpstk
+    set r21 $05 ; GLB: break interrupt code
+    set r14 $00 ; GLB: default slot value
+
+    set r1 $6 ; n
+    psh r1    ; n (arg1)
+    psh r14    ; slot
+
+    set r4 ::fib
+    cal r4 ; fib(n)
+
+    pop r7 ; pop slot
+    pop r1 ; pop arg1
+
     hlt
