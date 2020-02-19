@@ -378,6 +378,7 @@ int resolve_label(ParserState *st, char *name) {
     for (size_t i = 0; i < st->labels.ct; i++) {
         LabelDef lb = buf_get_LabelDef(&st->labels, i);
         if (streq(lb.name, name)) {
+            printf("resolved label: %s @ $%04x \n", lb.name, lb.offset);
             return lb.offset;
         }
     }
@@ -425,6 +426,7 @@ SourceProgram parse(LexResult lexed) {
 
     // emit the entry jump (as nop)
     buf_push_AStatement(&src.statements, IMM_STATEMENT(OP_NOP, 0, 0, 0));
+    st.offset += INSTR_SIZE; // push space for entry jump
 
     // parse the lex result into a list of instructions
     while (st.token < lexed.token_count) {
@@ -532,7 +534,7 @@ SourceProgram parse(LexResult lexed) {
     // check for entry point label
     if (entry_label) {
         // resolve the label and replace the entry jump
-        UWORD entry_addr = resolve_label(&st, entry_label) + src.data_size;
+        UWORD entry_addr = resolve_label(&st, entry_label);
         buf_set_AStatement(&src.statements, 0, IMM_STATEMENT(OP_JMI, entry_addr, 0, 0));
         src.entry = entry_addr;
     }
@@ -743,7 +745,7 @@ void dump_source_program(SourceProgram src) {
 void dump_compiled_program(CompiledProgram cmp, bool rich) {
     printf("code size: $%04x\n", cmp.instruction_count * INSTR_SIZE);
     printf("data size: $%04x\n", cmp.data_size);
-    int offset = HEADER_SIZE + cmp.data_size;
+    int offset = cmp.data_size;
     for (size_t i = 0; i < cmp.instruction_count; i++) {
         Instruction in = cmp.instructions[i];
         if (rich)

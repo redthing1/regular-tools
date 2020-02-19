@@ -34,5 +34,8 @@ main:
     ; labels can be accessed with positive offsets
     set r3 ::data1^$4 ; pointer to "hello" string
 
+    hlt
+
 func1:
-    set r7 $0
+    set r7 $ff
+    ret
