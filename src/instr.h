@@ -266,7 +266,7 @@ InstructionInfo get_instruction_info_op(OPCODE opcode) {
         return REG(num);                                                                                               \
     }
 
-ARG get_register(char *mnem) {
+ARG get_register(const char *mnem) {
     if (streq(mnem, "pc")) {
         return REG_RPC;
     }

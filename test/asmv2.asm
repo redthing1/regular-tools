@@ -20,6 +20,7 @@ data1:
 ; the argument list is followed by MARK (":")
 addi@ rA rB v0 : ; this macro sets rA = rB + v0
     add rA rB v0
+::
 
 main:
     set r1 $0

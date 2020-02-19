@@ -15,8 +15,8 @@ provides lexer and parser for the assembler
 /* #region Parser */
 
 typedef struct {
-    char *label; // label name
-    int offset;  // offset to label
+    char *label;    // label name
+    int add_offset; // add offset
 } RefValueSource;
 
 typedef enum { VS_IMM, VS_REF } ValueSourceKind;
@@ -76,8 +76,16 @@ typedef struct {
 BUFFIE_OF(MacroArg)
 
 typedef struct {
+    const char *mnem;
+    const char *a1, *a2, *a3;
+} RawStatement;
+
+BUFFIE_OF(RawStatement)
+
+typedef struct {
     char *name;
     Buffie_MacroArg args;
+    Buffie_RawStatement statements;
 } MacroDef;
 
 BUFFIE_OF(MacroDef)
@@ -185,12 +193,12 @@ ValueSource read_value_arg(ParserState *st) {
         expect_token(st, MARK); // eat the mark
         Token label_ref_tok = expect_token(st, IDENTIFIER);
         vs.kind = VS_REF;
-        vs.ref = (RefValueSource){.label = label_ref_tok.cont, .offset = st->offset};
+        vs.ref = (RefValueSource){.label = label_ref_tok.cont, .add_offset = 0};
         Token pk_offset = peek_token(st);
         if (pk_offset.kind == OFFSET) {
             expect_token(st, OFFSET); // eat the offset token
             uint32_t offset_val = parse_numeric(st);
-            vs.ref.offset += offset_val;
+            vs.ref.add_offset = offset_val;
         }
         return vs;
     } else if (next.kind == NUMERIC_CONSTANT) {
@@ -229,34 +237,32 @@ ValueSource read_value_arg(ParserState *st) {
     return vs;
 }
 
-AStatement read_statement(ParserState *pst, const char *mnem) {
+AStatement read_statement(ParserState *pst, const char *mnem, const char *a1, const char *a2, const char *a3) {
     // given guaranteed validation of opcode
     InstructionInfo info = get_instruction_info(mnem);
-    AStatement stmt = IMM_STATEMENT(info.opcode, 0, 0, 0);
-    stmt.op = info.opcode;
+    AStatement raw_stmt = IMM_STATEMENT(info.opcode, 0, 0, 0);
+    raw_stmt.op = info.opcode;
 
     // read the instruction data
     if ((info.type & INSTR_K_R1) > 0) {
-        Token ta1 = expect_token(pst, IDENTIFIER);
-        stmt.a1 = IMM_ARG(get_register(ta1.cont));
+        raw_stmt.a1 = IMM_ARG(get_register(a1));
     }
     if ((info.type & INSTR_K_R2) > 0) {
-        Token ta2 = expect_token(pst, IDENTIFIER);
-        stmt.a2 = IMM_ARG(get_register(ta2.cont));
+        raw_stmt.a2 = IMM_ARG(get_register(a2));
     }
     if ((info.type & INSTR_K_R3) > 0) {
-        Token ta3 = expect_token(pst, IDENTIFIER);
-        stmt.a3 = IMM_ARG(get_register(ta3.cont));
-    }
-    if ((info.type & INSTR_K_I1) > 0) {
-        stmt.a1 = read_value_arg(pst);
-    } else if ((info.type & INSTR_K_I2) > 0) {
-        stmt.a2 = read_value_arg(pst);
-    } else if ((info.type & INSTR_K_I3) > 0) {
-        stmt.a3 = read_value_arg(pst);
+        raw_stmt.a3 = IMM_ARG(get_register(a3));
     }
 
-    return stmt;
+    if ((info.type & INSTR_K_I1) > 0) {
+        raw_stmt.a1 = read_value_arg(pst);
+    } else if ((info.type & INSTR_K_I2) > 0) {
+        raw_stmt.a2 = read_value_arg(pst);
+    } else if ((info.type & INSTR_K_I3) > 0) {
+        raw_stmt.a3 = read_value_arg(pst);
+    }
+
+    return raw_stmt;
 }
 
 MacroArg match_macro_arg(MacroDef *md, const char *arg) {
@@ -294,7 +300,37 @@ void define_macro(ParserState *st, const char *name) {
         buf_push_MacroArg(&def.args, arg_def);
     }
     expect_token(st, MARK); // eat the mark
-    // TODO: interpret the macro body
+    // interpret the macro body
+    buf_alloc_RawStatement(&def.statements, 4);
+    while (true) {
+        Token next = peek_token(st);
+        if (next.kind == MARK && streq(next.cont, "::")) {
+            // end of macro def
+            break;
+        }
+        // otherwise, we should have an identifier
+        Token iden = expect_token(st, IDENTIFIER);
+        const char *mnem = iden.cont;
+        InstructionInfo info = get_instruction_info(mnem);
+        const char *a1 = NULL, *a2 = NULL, *a3 = NULL;
+        if (info.type == INSTR_INV) { // not a base instruction
+                                      // we don't support referencing macros within macros
+            printf("unrecognized mnemonic: %s\n", mnem);
+        } else {
+            if ((info.type & INSTR_K_R1) > 0) {
+                a1 = expect_token(st, IDENTIFIER).cont;
+            }
+            if ((info.type & INSTR_K_R2) > 0) {
+                a2 = expect_token(st, IDENTIFIER).cont;
+            }
+            if ((info.type & INSTR_K_R3) > 0) {
+                a3 = expect_token(st, IDENTIFIER).cont;
+            }
+        }
+        RawStatement raw_stmt = (RawStatement){.mnem = mnem, .a1 = a1, .a2 = a2, .a3 = a3};
+        buf_push_RawStatement(&def.statements, raw_stmt);
+    }
+
     buf_push_MacroDef(&st->macros, def); // push the macro
 }
 
@@ -335,6 +371,14 @@ void reallocate_program_data(SourceProgram *src, size_t space) {
         src->data = malloc(sizeof(BYTE) * space);
     } else {
         src->data = realloc(src->data, sizeof(BYTE) * (src->data_size + space));
+    }
+}
+
+void resolve_statements(SourceProgram *src, ParserState *pst) {
+    for (size_t i = 0; i < src->statements.ct; i++) {
+        AStatement raw_stmt = buf_get_AStatement(&src->statements, i);
+        // TODO: resolve all value sources
+        buf_set_AStatement(&src->statements, i, raw_stmt);
     }
 }
 
@@ -420,6 +464,7 @@ SourceProgram parse(LexResult lexed) {
             } else { // instruction
                 const char *mnem = iden.cont;
                 InstructionInfo info = get_instruction_info(mnem);
+                const char *a1 = NULL, *a2 = NULL, *a3 = NULL;
                 if (info.type == INSTR_INV) {               // didn't match standard instruction names
                     MacroDef md = resolve_macro(&st, mnem); // check if a matching macro exists
                     if (!md.name) {                         // invalid mnemonic
@@ -427,10 +472,22 @@ SourceProgram parse(LexResult lexed) {
                     } else {
                         // expand the macro
                         read_macro_statement(&st, src.statements, &md);
+                        break;
+                    }
+                } else { // fill in arguments
+                    if ((info.type & INSTR_K_R1) > 0) {
+                        a1 = expect_token(&st, IDENTIFIER).cont;
+                    }
+                    if ((info.type & INSTR_K_R2) > 0) {
+                        a2 = expect_token(&st, IDENTIFIER).cont;
+                    }
+                    if ((info.type & INSTR_K_R3) > 0) {
+                        a3 = expect_token(&st, IDENTIFIER).cont;
                     }
                 }
 
-                read_statement(&st, iden.cont);
+                AStatement raw_stmt = read_statement(&st, iden.cont, a1, a2, a3); // read statement
+                buf_push_AStatement(&src.statements, raw_stmt);                   // push statement
             }
             break;
         }
@@ -449,6 +506,9 @@ SourceProgram parse(LexResult lexed) {
         buf_set_AStatement(&src.statements, 0, IMM_STATEMENT(OP_JMI, entry_addr, 0, 0));
         src.entry = entry_addr;
     }
+
+    // resolve everything else
+    resolve_statements(&src, &st);
 
     parser_state_cleanup(&st);
 
