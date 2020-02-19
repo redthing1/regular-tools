@@ -155,7 +155,7 @@ Token expect_token(ParserState *st, CharType type) {
     }
 }
 
-uint32_t parse_numeric(const char* num) { // interpret numeric constant
+uint32_t parse_numeric(const char *num) { // interpret numeric constant
     char pfx = num[0];
     // create a new string without the prefix
     int num_len = strlen(num) - 1;
@@ -213,6 +213,8 @@ ValueSource read_value_arg(ParserState *st) {
     return vs;
 }
 
+RawStatement handle_raw_statement(SourceProgram *src, ParserState *st, const char *mnem);
+
 AStatement read_statement(ParserState *pst, const char *mnem, const char *a1, const char *a2, const char *a3) {
     // given guaranteed validation of opcode
     InstructionInfo info = get_instruction_info(mnem);
@@ -251,7 +253,8 @@ AStatement read_statement(ParserState *pst, const char *mnem, const char *a1, co
 }
 
 int match_macro_argdef(MacroDef *md, const char *arg) {
-    if (!arg) return -1;
+    if (!arg)
+        return -1;
     for (size_t i = 0; i < md->args.ct; i++) {
         MacroArg arg_def = buf_get_MacroArg(&md->args, i);
         if (streq(arg_def.name, arg)) {
@@ -290,7 +293,7 @@ void expand_macro(ParserState *pst, MacroDef *md, Buffie_AStatement *statements)
     }
 }
 
-void define_macro(ParserState *st, const char *name) {
+void define_macro(SourceProgram *src, ParserState *st, const char *name) {
     MacroDef def;
     def.name = util_strdup(name);
     buf_alloc_MacroArg(&def.args, 4);
@@ -317,24 +320,11 @@ void define_macro(ParserState *st, const char *name) {
         // otherwise, we should have an identifier
         Token iden = expect_token(st, IDENTIFIER);
         const char *mnem = iden.cont;
-        InstructionInfo info = get_instruction_info(mnem);
-        const char *a1 = NULL, *a2 = NULL, *a3 = NULL;
-        if (info.type == INSTR_INV) { // not a base instruction
-                                      // we don't support referencing macros within macros
-            printf("unrecognized mnemonic: %s\n", mnem);
-        } else {
-            if ((info.type & (INSTR_K_R1 | INSTR_K_I1)) > 0) {
-                a1 = take_token(st).cont;
-            }
-            if ((info.type & (INSTR_K_R2 | INSTR_K_I2)) > 0) {
-                a2 = take_token(st).cont;
-            }
-            if ((info.type & (INSTR_K_R3 | INSTR_K_I3)) > 0) {
-                a3 = take_token(st).cont;
-            }
+
+        RawStatement raw_stmt = handle_raw_statement(src, st, mnem);
+        if (raw_stmt.mnem) {
+            buf_push_RawStatement(&def.statements, raw_stmt);
         }
-        RawStatement raw_stmt = (RawStatement){.mnem = mnem, .a1 = a1, .a2 = a2, .a3 = a3};
-        buf_push_RawStatement(&def.statements, raw_stmt);
     }
 
     buf_push_MacroDef(&st->macros, def); // push the macro
@@ -478,36 +468,18 @@ SourceProgram parse(LexResult lexed) {
                 break;
             } else if (next.kind == BIND) {   // macro def
                 expect_token(&st, BIND);      // eat the bind
-                define_macro(&st, iden.cont); // define the macro
+                define_macro(&src, &st, iden.cont); // define the macro
                 break;
             } else { // instruction
                 const char *mnem = iden.cont;
-                InstructionInfo info = get_instruction_info(mnem);
-                const char *a1 = NULL, *a2 = NULL, *a3 = NULL;
-                if (info.type == INSTR_INV) {               // didn't match standard instruction names
-                    MacroDef md = resolve_macro(&st, mnem); // check if a matching macro exists
-                    if (!md.name) {                         // invalid mnemonic
-                        printf("unrecognized mnemonic: %s\n", mnem);
-                    } else {
-                        // expand the macro
-                        expand_macro(&st, &md, &src.statements);
-                        break;
-                    }
-                } else { // fill in arguments
-                    if ((info.type & INSTR_K_R1) > 0) {
-                        a1 = expect_token(&st, IDENTIFIER).cont;
-                    }
-                    if ((info.type & INSTR_K_R2) > 0) {
-                        a2 = expect_token(&st, IDENTIFIER).cont;
-                    }
-                    if ((info.type & INSTR_K_R3) > 0) {
-                        a3 = expect_token(&st, IDENTIFIER).cont;
-                    }
+                RawStatement raw_stmt = handle_raw_statement(&src, &st, mnem);
+                if (raw_stmt.mnem) {
+                    AStatement stmt =
+                        read_statement(&st, raw_stmt.mnem, raw_stmt.a1, raw_stmt.a2, raw_stmt.a3); // read statement
+                    buf_push_AStatement(&src.statements, stmt);                                    // push statement
+                    InstructionInfo info = get_instruction_info(mnem);
+                    st.offset += info.sz; // update code offset
                 }
-
-                AStatement stmt = read_statement(&st, iden.cont, a1, a2, a3); // read statement
-                buf_push_AStatement(&src.statements, stmt);                   // push statement
-                st.offset += info.sz;                                         // update code offset
             }
             break;
         }
@@ -534,6 +506,34 @@ SourceProgram parse(LexResult lexed) {
 
     // update program information
     return src;
+}
+
+RawStatement handle_raw_statement(SourceProgram *src, ParserState *st, const char *mnem) {
+    InstructionInfo info = get_instruction_info(mnem);
+    const char *a1 = NULL, *a2 = NULL, *a3 = NULL;
+    if (info.type == INSTR_INV) {              // didn't match standard instruction names
+        MacroDef md = resolve_macro(st, mnem); // check if a matching macro exists
+        if (!md.name) {                        // invalid mnemonic
+            printf("unrecognized mnemonic: %s\n", mnem);
+            return (RawStatement){.mnem = NULL}; // failed
+        } else {
+            // expand the macro
+            expand_macro(st, &md, &src->statements);
+            return (RawStatement){.mnem = NULL}; // expanded macro
+        }
+    } else { // fill in arguments
+        if ((info.type & INSTR_K_R1) > 0) {
+            a1 = expect_token(st, IDENTIFIER).cont;
+        }
+        if ((info.type & INSTR_K_R2) > 0) {
+            a2 = expect_token(st, IDENTIFIER).cont;
+        }
+        if ((info.type & INSTR_K_R3) > 0) {
+            a3 = expect_token(st, IDENTIFIER).cont;
+        }
+    }
+    RawStatement raw_stmt = (RawStatement){.mnem = mnem, .a1 = a1, .a2 = a2, .a3 = a3};
+    return raw_stmt;
 }
 
 void compiled_program_init(CompiledProgram *cmp) {
