@@ -93,6 +93,7 @@ typedef struct {
 
 void source_program_init(SourceProgram *p) {
     buf_alloc_AStatement(&p->statements, 128);
+    p->entry = 0;
     p->status = 0;
     p->data = NULL;
     p->data_size = 0;
@@ -187,6 +188,7 @@ ValueSource read_value_arg(ParserState *st) {
         vs.ref = (RefValueSource){.label = label_ref_tok.cont, .offset = st->offset};
         Token pk_offset = peek_token(st);
         if (pk_offset.kind == OFFSET) {
+            expect_token(st, OFFSET); // eat the offset token
             uint32_t offset_val = parse_numeric(st);
             vs.ref.offset += offset_val;
         }
@@ -257,9 +259,23 @@ AStatement read_statement(ParserState *pst, const char *mnem) {
     return stmt;
 }
 
+MacroArg match_macro_arg(MacroDef *md, const char *arg) {
+    for (size_t i = 0; i < md->args.ct; i++) {
+        MacroArg arg_def = buf_get_MacroArg(&md->args, i);
+        if (streq(arg_def.name, arg)) {
+            return arg_def;
+        }
+    }
+    return (MacroArg){.name = NULL, .type = MACROARG_VAL};
+}
+
 void read_macro_statement(ParserState *pst, Buffie_AStatement statements, MacroDef *md) {
     // unroll and expand the macro
     printf("unrolling macro: %s\n", md->name);
+    // for now, eat the args
+    for (size_t i = 0; i < md->args.ct; i++) {
+        expect_token(pst, IDENTIFIER);
+    }
 }
 
 void define_macro(ParserState *st, const char *name) {
@@ -393,18 +409,15 @@ SourceProgram parse(LexResult lexed) {
         case IDENTIFIER: {
             Token iden = expect_token(&st, IDENTIFIER);
             Token next = peek_token(&st);
-            switch (next.kind) {
-            case MARK: {                      // label def
-                expect_token(&st, MARK);      // eat the mark
-                define_label(&st, iden.cont); // create label
+            if (next.kind == MARK && streq(next.cont, ":")) { // label def (only if single mark)
+                expect_token(&st, MARK);                      // eat the mark
+                define_label(&st, iden.cont);                 // create label
                 break;
-            }
-            case BIND: {                      // macro def
+            } else if (next.kind == BIND) {   // macro def
                 expect_token(&st, BIND);      // eat the bind
                 define_macro(&st, iden.cont); // define the macro
                 break;
-            }
-            default: { // instruction
+            } else { // instruction
                 const char *mnem = iden.cont;
                 InstructionInfo info = get_instruction_info(mnem);
                 if (info.type == INSTR_INV) {               // didn't match standard instruction names
@@ -418,8 +431,6 @@ SourceProgram parse(LexResult lexed) {
                 }
 
                 read_statement(&st, iden.cont);
-                break;
-            }
             }
             break;
         }
@@ -436,6 +447,7 @@ SourceProgram parse(LexResult lexed) {
         // resolve the label and replace the entry jump
         UWORD entry_addr = resolve_label(&st, entry_label);
         buf_set_AStatement(&src.statements, 0, IMM_STATEMENT(OP_JMI, entry_addr, 0, 0));
+        src.entry = entry_addr;
     }
 
     parser_state_cleanup(&st);
@@ -478,14 +490,14 @@ CompiledProgram compile_program(SourceProgram src) {
     compiled_program_init(&cmp);
 
     // this will only work if src is fully simplified (1 Statement : 1 Instruction)
-    cmp.instruction_count = src.statements.sz;
+    cmp.instruction_count = src.statements.ct;
     cmp.instructions = malloc(sizeof(Instruction) * cmp.instruction_count);
     // copy data
     cmp.data = src.data;
     cmp.data_size = src.data_size;
 
     // step-by-step convert the program
-    for (size_t i = 0; i < src.statements.sz; i++) {
+    for (size_t i = 0; i < src.statements.ct; i++) {
         AStatement st = buf_get_AStatement(&src.statements, i);
         // we assume that all statement arguments are resolved
         Instruction in = compile_statement(&st);

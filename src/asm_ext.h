@@ -150,7 +150,7 @@ SourceProgram compile_pseudo_instructions(SourceProgram src) {
 SourceProgram simplify_pseudo_2pass(SourceProgram src) {
     // two-pass compile pseudo
     SourceProgram s1 = compile_pseudo_instructions(src);
-    free_source_program(s1, false);
     SourceProgram s2 = compile_pseudo_instructions(s1);
+    free_source_program(s1, false);
     return s2;
 }

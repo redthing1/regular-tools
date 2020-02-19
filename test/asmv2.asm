@@ -27,7 +27,8 @@ main:
     addi r1 r2 $8
     ; labels can be ahead-referenced
     ; any relative offsets will be resolved later
-    cal ::func1
+    set r4 ::func1
+    cal r4
 
     ; labels can be accessed with positive offsets
     set r3 ::data1^$4 ; pointer to "hello" string
