@@ -532,7 +532,7 @@ SourceProgram parse(LexResult lexed) {
     // check for entry point label
     if (entry_label) {
         // resolve the label and replace the entry jump
-        UWORD entry_addr = resolve_label(&st, entry_label);
+        UWORD entry_addr = resolve_label(&st, entry_label) + src.data_size;
         buf_set_AStatement(&src.statements, 0, IMM_STATEMENT(OP_JMI, entry_addr, 0, 0));
         src.entry = entry_addr;
     }
