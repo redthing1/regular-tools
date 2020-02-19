@@ -104,6 +104,7 @@ void parser_state_cleanup(ParserState *st) {
         LabelDef ld = buf_get_LabelDef(&st->labels, i);
         free(ld.name);
     }
+    buf_free_LabelDef(&st->labels);
     // clean up macros
     for (size_t i = 0; i < st->macros.ct; i++) {
         MacroDef md = buf_get_MacroDef(&st->macros, i);
@@ -112,7 +113,9 @@ void parser_state_cleanup(ParserState *st) {
             MacroArg arg = buf_get_MacroArg(&md.args, j);
             free(arg.name);
         }
+        buf_free_MacroArg(&md.args);
     }
+    buf_free_MacroDef(&st->macros);
 }
 
 Token peek_token(ParserState *st) {
@@ -311,9 +314,18 @@ int resolve_label(ParserState *st, char *name) {
     return 0; // not resolved
 }
 
+void reallocate_program_data(SourceProgram *src, size_t space) {
+    if (!src->data) {
+        src->data = malloc(sizeof(BYTE) * space);
+    } else {
+        src->data = realloc(src->data, sizeof(BYTE) * (src->data_size + space));
+    }
+}
+
 SourceProgram parse(LexResult lexed) {
     ParserState st = {.lexed = &lexed, .token = 0, .cpos = 0, .offset = 0};
     buf_alloc_LabelDef(&st.labels, 16);
+    buf_alloc_MacroDef(&st.macros, 16);
 
     SourceProgram src;
     source_program_init(&src);
@@ -352,11 +364,7 @@ SourceProgram parse(LexResult lexed) {
                     pack_len = pack_len / 2;              // divide by two because 0xff = 1 byte
                     BYTE *pack_data = datahex(pack.cont); // convert data from hex
                     // write the pack data to the binary
-                    if (!src.data) {
-                        src.data = malloc(sizeof(BYTE) * pack_len);
-                    } else {
-                        src.data = realloc(src.data, sizeof(BYTE) * (src.data_size + pack_len));
-                    }
+                    reallocate_program_data(&src, pack_len);
                     // copy the data
                     memcpy(src.data + src.data_size, pack_data, pack_len);
                     free(pack_data); // free decoded data
@@ -366,6 +374,7 @@ SourceProgram parse(LexResult lexed) {
                     Token pack = take_token(&st); // any following token is valid
                     pack_len = strlen(pack.cont);
                     // copy string from token to data
+                    reallocate_program_data(&src, pack_len);
                     memcpy(src.data + src.data_size, pack.cont, pack_len);
                     break;
                 }
@@ -490,8 +499,8 @@ void free_source_program(SourceProgram src, bool free_data) {
     // free statement buffer
     buf_free_AStatement(&src.statements);
     if (free_data && src.data) {
-        // free data
-        free(src.data);
+        free(src.data); // free data
+        src.data = NULL;
     }
 }
 

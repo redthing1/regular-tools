@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 
     // clean up
     free(inf_read.content);
-    free_lex_result(lex_result);
+    free_lex_result(&lex_result);
     free_source_program(final, true);
 
     fclose(ouf_fp); // close output file
