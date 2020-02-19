@@ -300,6 +300,8 @@ void expand_macro(ParserState *pst, MacroDef *md, Buffie_AStatement *statements)
             raw_stmt.a3 = inputs[matched_argdef3];
         AStatement st = read_statement(pst, raw_stmt.mnem, raw_stmt.a1, raw_stmt.a2, raw_stmt.a3);
         buf_push_AStatement(statements, st);
+        InstructionInfo info = get_instruction_info(raw_stmt.mnem);
+        pst->offset += info.sz;
     }
 }
 
@@ -520,6 +522,7 @@ SourceProgram parse(LexResult lexed) {
 
                 AStatement raw_stmt = read_statement(&st, iden.cont, a1, a2, a3); // read statement
                 buf_push_AStatement(&src.statements, raw_stmt);                   // push statement
+                st.offset += info.sz;                                             // update code offset
             }
             break;
         }
