@@ -298,7 +298,7 @@ ARG get_register(const char *mnem) {
     REG_STREQ(27)
     REG_STREQ(28)
     else if (streq(mnem, "r29") || streq(mnem, "ad")) {
-        return REG_RAT;
+        return REG_RAD;
     }
     else if (streq(mnem, "at")) {
         return REG_RAT;
