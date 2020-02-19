@@ -213,7 +213,7 @@ ValueSource read_value_arg(ParserState *st) {
     return vs;
 }
 
-RawStatement handle_raw_statement(SourceProgram *src, ParserState *st, const char *mnem);
+void handle_raw_statement(Buffie_RawStatement *output, ParserState *st, const char *mnem);
 
 AStatement read_statement(ParserState *pst, const char *mnem, const char *a1, const char *a2, const char *a3) {
     // given guaranteed validation of opcode
@@ -264,7 +264,7 @@ int match_macro_argdef(MacroDef *md, const char *arg) {
     return -1;
 }
 
-void expand_macro(ParserState *pst, MacroDef *md, Buffie_AStatement *statements) {
+void expand_macro(ParserState *pst, MacroDef *md, Buffie_RawStatement *raw_statements) {
     // printf("unrolling macro: %s\n", md->name);
     const char *inputs[md->args.ct];
     // save the input args
@@ -286,14 +286,14 @@ void expand_macro(ParserState *pst, MacroDef *md, Buffie_AStatement *statements)
         int matched_argdef3 = match_macro_argdef(md, raw_stmt.a3);
         if (matched_argdef3 >= 0)
             raw_stmt.a3 = inputs[matched_argdef3];
-        AStatement st = read_statement(pst, raw_stmt.mnem, raw_stmt.a1, raw_stmt.a2, raw_stmt.a3);
-        buf_push_AStatement(statements, st);
-        InstructionInfo info = get_instruction_info(raw_stmt.mnem);
-        pst->offset += info.sz;
+        // AStatement st = read_statement(pst, raw_stmt.mnem, raw_stmt.a1, raw_stmt.a2, raw_stmt.a3);
+        buf_push_RawStatement(raw_statements, raw_stmt);
+        // InstructionInfo info = get_instruction_info(raw_stmt.mnem);
+        // pst->offset += info.sz;
     }
 }
 
-void define_macro(SourceProgram *src, ParserState *st, const char *name) {
+void define_macro(ParserState *st, const char *name) {
     MacroDef def;
     def.name = util_strdup(name);
     buf_alloc_MacroArg(&def.args, 4);
@@ -321,10 +321,7 @@ void define_macro(SourceProgram *src, ParserState *st, const char *name) {
         Token iden = expect_token(st, IDENTIFIER);
         const char *mnem = iden.cont;
 
-        RawStatement raw_stmt = handle_raw_statement(src, st, mnem);
-        if (raw_stmt.mnem) {
-            buf_push_RawStatement(&def.statements, raw_stmt);
-        }
+        handle_raw_statement(&def.statements, st, mnem);
     }
 
     buf_push_MacroDef(&st->macros, def); // push the macro
@@ -466,14 +463,17 @@ SourceProgram parse(LexResult lexed) {
                 expect_token(&st, MARK);                      // eat the mark
                 define_label(&st, iden.cont);                 // create label
                 break;
-            } else if (next.kind == BIND) {   // macro def
-                expect_token(&st, BIND);      // eat the bind
-                define_macro(&src, &st, iden.cont); // define the macro
+            } else if (next.kind == BIND) {         // macro def
+                expect_token(&st, BIND);            // eat the bind
+                define_macro(&st, iden.cont); // define the macro
                 break;
             } else { // instruction
                 const char *mnem = iden.cont;
-                RawStatement raw_stmt = handle_raw_statement(&src, &st, mnem);
-                if (raw_stmt.mnem) {
+                Buffie_RawStatement raw_statements;
+                buf_alloc_RawStatement(&raw_statements, 8);
+                handle_raw_statement(&raw_statements, &st, mnem);
+                for (size_t i = 0; i < raw_statements.ct; i++) {
+                    RawStatement raw_stmt = buf_get_RawStatement(&raw_statements, i);
                     AStatement stmt =
                         read_statement(&st, raw_stmt.mnem, raw_stmt.a1, raw_stmt.a2, raw_stmt.a3); // read statement
                     buf_push_AStatement(&src.statements, stmt);                                    // push statement
@@ -508,32 +508,32 @@ SourceProgram parse(LexResult lexed) {
     return src;
 }
 
-RawStatement handle_raw_statement(SourceProgram *src, ParserState *st, const char *mnem) {
+void handle_raw_statement(Buffie_RawStatement *output, ParserState *st, const char *mnem) {
     InstructionInfo info = get_instruction_info(mnem);
     const char *a1 = NULL, *a2 = NULL, *a3 = NULL;
     if (info.type == INSTR_INV) {              // didn't match standard instruction names
         MacroDef md = resolve_macro(st, mnem); // check if a matching macro exists
         if (!md.name) {                        // invalid mnemonic
             printf("unrecognized mnemonic: %s\n", mnem);
-            return (RawStatement){.mnem = NULL}; // failed
+            return; // failed
         } else {
             // expand the macro
-            expand_macro(st, &md, &src->statements);
-            return (RawStatement){.mnem = NULL}; // expanded macro
+            expand_macro(st, &md, output);
+            return; // expanded macro
         }
     } else { // fill in arguments
-        if ((info.type & INSTR_K_R1) > 0) {
-            a1 = expect_token(st, IDENTIFIER).cont;
+        if ((info.type & (INSTR_K_R1 | INSTR_K_I1)) > 0) {
+            a1 = take_token(st).cont;
         }
-        if ((info.type & INSTR_K_R2) > 0) {
-            a2 = expect_token(st, IDENTIFIER).cont;
+        if ((info.type & (INSTR_K_R2 | INSTR_K_I2)) > 0) {
+            a2 = take_token(st).cont;
         }
-        if ((info.type & INSTR_K_R3) > 0) {
-            a3 = expect_token(st, IDENTIFIER).cont;
+        if ((info.type & (INSTR_K_R3 | INSTR_K_I3)) > 0) {
+            a3 = take_token(st).cont;
         }
     }
     RawStatement raw_stmt = (RawStatement){.mnem = mnem, .a1 = a1, .a2 = a2, .a3 = a3};
-    return raw_stmt;
+    buf_push_RawStatement(output, raw_stmt);
 }
 
 void compiled_program_init(CompiledProgram *cmp) {
