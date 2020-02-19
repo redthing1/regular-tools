@@ -256,6 +256,7 @@ AStatement read_statement(ParserState *pst, const char *mnem) {
 
 void read_macro_statement(ParserState *pst, Buffie_AStatement statements, MacroDef *md) {
     // unroll and expand the macro
+    printf("unrolling macro: %s\n", md->name);
 }
 
 void define_macro(ParserState *st, const char *name) {
@@ -275,6 +276,7 @@ void define_macro(ParserState *st, const char *name) {
     }
     expect_token(st, MARK); // eat the mark
     // TODO: interpret the macro body
+    buf_push_MacroDef(&st->macros, def); // push the macro
 }
 
 MacroDef resolve_macro(ParserState *pst, const char *name) {
@@ -400,9 +402,10 @@ SourceProgram parse(LexResult lexed) {
                     MacroDef md = resolve_macro(&st, mnem); // check if a matching macro exists
                     if (!md.name) {                         // invalid mnemonic
                         printf("unrecognized mnemonic: %s\n", mnem);
+                    } else {
+                        // expand the macro
+                        read_macro_statement(&st, src.statements, &md);
                     }
-                    // expand the macro
-                    read_macro_statement(&st, src.statements, &md);
                 }
 
                 read_statement(&st, iden.cont);

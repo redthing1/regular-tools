@@ -103,7 +103,8 @@ char *util_strmk(size_t size) {
 }
 
 char* util_strdup(const char* str) {
-    char* dst = malloc(strlen(str) + 1);
+    size_t len = strlen(str);
+    char* dst = malloc(len + 1);
     strcpy(dst, str);
     return dst;
 }
