@@ -144,6 +144,15 @@ uint32_t parse_numeric(ParserState *st) {
     return val;
 }
 
+void define_macro(ParserState *st, const char *name) {}
+
+void define_label(ParserState *st, const char *name) {
+    char *label_name = malloc(strlen(name) + 1);
+    strcpy(label_name, name);
+    LabelDef ld = {.name = label_name, .offset = st->offset};
+    buf_push_LabelDef(&st->labels, ld);
+}
+
 int resolve_label(ParserState *st, char *name) {
     // find the defined label
     for (size_t i = 0; i < st->labels.ct; i++) {
@@ -227,6 +236,23 @@ SourceProgram parse(LexResult lexed) {
             break;
         }
         case IDENTIFIER: {
+            Token iden = expect_token(&st, IDENTIFIER);
+            Token next = peek_token(&st);
+            switch (next.kind) {
+            case MARK: {                      // label def
+                expect_token(&st, MARK);      // eat the mark
+                define_label(&st, iden.cont); // create label
+                break;
+            }
+            case BIND: {                      // macro def
+                expect_token(&st, BIND);      // eat the bind
+                define_macro(&st, iden.cont); // define the macro
+                break;
+            }
+            default: { // instruction
+                break;
+            }
+            }
             // TODO: handle id
             take_token(&st); // eat the tok
             break;
