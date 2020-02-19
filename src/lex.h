@@ -190,6 +190,8 @@ LexResult lex(char *buf, size_t buf_sz) {
             take_char(&st); // eat the character
         }
     }
+    free(working); // clean up working
+
     LexResult res;
     res.tokens = tokens;
     res.token_count = tokens.ct;

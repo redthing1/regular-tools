@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
 
     // clean up
     free(inf_read.content);
+    free_compiled_program(compiled);
     free_source_program(final, true);
     free_lex_result(&lex_result);
 
