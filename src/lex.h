@@ -127,8 +127,8 @@ void skip_until(LexerState *st, char until) {
 
 Token make_token_of(LexerState *st, char *working, CharType type) {
     // copy working to new buffer
+    take_chars(st, working, type);
     char *cont = util_strdup(working);
-    take_chars(st, cont, type);
     Token tok = {.kind = type, .cont = cont};
     return tok;
 }
