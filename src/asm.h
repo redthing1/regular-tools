@@ -23,7 +23,7 @@ typedef enum { VS_IMM, VS_REF } ValueSourceKind;
 
 typedef struct {
     ValueSourceKind kind; // IMM, REF
-    uint8_t val;          // immediate value
+    uint32_t val;         // immediate value
     RefValueSource ref;   // reference to another
 } ValueSource;
 
@@ -32,10 +32,12 @@ typedef struct {
     ValueSource a1, a2, a3;
 } AStatement;
 
+#define IMM_ARG(A1)                                                                                                    \
+    (ValueSource) { .kind = VS_IMM, .val = A1 }
+
 #define IMM_STATEMENT(OPCODE, A1, A2, A3)                                                                              \
     (AStatement) {                                                                                                     \
-        .op = OPCODE, .a1 = (ValueSource){.kind = VS_IMM, .val = A1}, .a2 = (ValueSource){.kind = VS_IMM, .val = A2},  \
-        .a3 = (ValueSource) {                                                                                          \
+        .op = OPCODE, .a1 = IMM_ARG(A1), .a2 = (ValueSource){.kind = VS_IMM, .val = A2}, .a3 = (ValueSource) {         \
             .kind = VS_IMM, .val = A3                                                                                  \
         }                                                                                                              \
     }
@@ -170,6 +172,92 @@ uint32_t parse_numeric(ParserState *st) {
     return val;
 }
 
+ValueSource read_value_arg(ParserState *st) {
+    Token next = peek_token(st);
+    ValueSource vs;
+    vs.kind = VS_IMM;
+    vs.val = 0;
+    if (next.kind == MARK) {
+        expect_token(st, MARK); // eat the mark
+        Token label_ref_tok = expect_token(st, IDENTIFIER);
+        vs.kind = VS_REF;
+        vs.ref = (RefValueSource){.label = label_ref_tok.cont, .offset = st->offset};
+        Token pk_offset = peek_token(st);
+        if (pk_offset.kind == OFFSET) {
+            uint32_t offset_val = parse_numeric(st);
+            vs.ref.offset += offset_val;
+        }
+        return vs;
+    } else if (next.kind == NUMERIC_CONSTANT) {
+        // interpret numeric token
+        Token num_tok = expect_token(st, NUMERIC_CONSTANT);
+        char prefix = num_tok.cont[0];
+        // create a new string without the prefix
+        int num_len = strlen(num_tok.cont) - 1;
+        char *num_str = malloc(num_len + 1);
+        strncpy(num_str, num_tok.cont + 1, num_len);
+        num_str[num_len] = '\0';
+        // convert base
+        uint32_t val = 0;
+        switch (prefix) {
+        case '$': {
+            // interpret as base-16
+            val = (int)strtol(num_str, NULL, 16);
+            break;
+        }
+        case '.': {
+            // interpret as base-10
+            val = atoi(num_str);
+            break;
+        }
+        default:
+            // invalid numeric
+            printf("ERR: invalid numeric prefix %c", prefix);
+        }
+        free(num_str); // free numstr
+        vs.kind = VS_IMM;
+        vs.val = val;
+        return vs;
+    } else {
+        printf("ERR: unrecognized token %s for value arg\n", next.cont);
+    }
+    return vs;
+}
+
+AStatement read_statement(ParserState *pst, const char *mnem) {
+    InstructionInfo info = get_instruction_info(mnem);
+    AStatement stmt = IMM_STATEMENT(info.opcode, 0, 0, 0);
+    if (info.type == INSTR_INV) {
+        // invalid mnemonic
+        printf("unrecognized mnemonic: %s\n", mnem);
+        return stmt; // an invalid instruction statement
+    }
+    stmt.op = info.opcode;
+
+    // read the instruction data
+    if ((info.type & INSTR_K_R1) > 0) {
+        Token ta1 = expect_token(pst, IDENTIFIER);
+        stmt.a1 = IMM_ARG(get_register(ta1.cont));
+    }
+    if ((info.type & INSTR_K_R2) > 0) {
+        Token ta2 = expect_token(pst, IDENTIFIER);
+        stmt.a2 = IMM_ARG(get_register(ta2.cont));
+    }
+    if ((info.type & INSTR_K_R3) > 0) {
+        Token ta3 = expect_token(pst, IDENTIFIER);
+        stmt.a3 = IMM_ARG(get_register(ta3.cont));
+    }
+    if ((info.type & INSTR_K_I1) > 0) {
+        stmt.a1 = read_value_arg(pst);
+    } else if ((info.type & INSTR_K_I2) > 0) {
+        stmt.a2 = read_value_arg(pst);
+    } else if ((info.type & INSTR_K_I3) > 0) {
+        stmt.a3 = read_value_arg(pst);
+    }
+
+    return stmt;
+}
+
 void define_macro(ParserState *st, const char *name) {
     MacroDef def;
     def.name = util_strdup(name);
@@ -292,6 +380,7 @@ SourceProgram parse(LexResult lexed) {
                 break;
             }
             default: { // instruction
+                read_statement(&st, iden.cont);
                 break;
             }
             }
@@ -328,7 +417,25 @@ void compiled_program_init(CompiledProgram *cmp) {
 }
 
 Instruction compile_statement(const AStatement *st) {
-    return (Instruction){.opcode = st->op, .a1 = st->a1.val, st->a2.val, st->a3.val};
+    Instruction instr = (Instruction){.opcode = st->op, .a1 = st->a1.val, st->a2.val, st->a3.val};
+    InstructionInfo info = get_instruction_info_op(st->op);
+    if ((info.type & INSTR_K_I1) > 0) {
+        // 24-bit constant
+        uint32_t val = st->a1.val;
+        instr.a1 = (ARG)(val & 0xff);        // lower 8
+        instr.a2 = (ARG)((val >> 8) & 0xff); // middle 8
+        instr.a3 = (ARG)(val >> 16);         // upper 8
+    } else if ((info.type & INSTR_K_I2) > 0) {
+        // 16-bit constant
+        uint32_t val = st->a2.val;
+        instr.a2 = (ARG)(val & 0xff); // lower 8
+        instr.a3 = (ARG)(val >> 8);   // upper 8
+    } else if ((info.type & INSTR_K_I3) > 0) {
+        // 8-bit constant
+        uint32_t val = st->a3.val;
+        instr.a3 = (ARG)val;
+    }
+    return instr;
 }
 
 CompiledProgram compile_program(SourceProgram src) {
