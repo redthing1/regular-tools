@@ -14,14 +14,6 @@ typedef struct {
     size_t pos;
 } DecoderState;
 
-typedef struct {
-    bool valid_magic;
-    // uint16_t entry;
-    uint16_t code_size;
-    uint16_t data_size;
-    size_t decode_offset;
-} RGHeader;
-
 ARG take_arg(DecoderState *st) { return st->buf[st->pos++]; }
 
 RGHeader decode_header(char *buf, size_t buf_sz) {

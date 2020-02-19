@@ -639,8 +639,29 @@ void write_instruction(FILE *ouf, Instruction *in) {
     fwrite(&w, sizeof(w), 1, ouf);
 }
 
+typedef struct {
+    bool valid_magic;
+    // uint16_t entry;
+    uint16_t code_size;
+    uint16_t data_size;
+    size_t decode_offset;
+} RGHeader;
+
 void write_compiled_program(FILE *ouf, CompiledProgram cmp) {
     char w = '\0';
+
+    // write header
+    RGHeader head;
+    head.valid_magic = true;
+    head.code_size = cmp.instruction_count * INSTR_SIZE;
+    head.data_size = cmp.data_size;
+    head.decode_offset = HEADER_SIZE;
+    const char *RG_MAGIC = "rg";
+    fputs(RG_MAGIC, ouf); // magic
+    // fwrite(&cmp.entry, sizeof(cmp.entry), 1, ouf); // entrypoint
+    fwrite(&head.code_size, sizeof(head.code_size), 1, ouf); // code size
+    fwrite(&head.data_size, sizeof(head.data_size), 1, ouf); // data size
+    printf("header[%d] \n", HEADER_SIZE);
 
     // write data
     if (cmp.data) {
