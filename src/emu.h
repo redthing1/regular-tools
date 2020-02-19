@@ -128,7 +128,15 @@ void emu_interrupt(EmulatorState *emu_st, UWORD interrupt) {
     case INTERRUPT_DUMPMEM: {
         printf("-- MEM --\n");
         // TODO: dump current memory page
-        printf("mem dump not yet implemented.\n");
+        // pages don't exist so dump 256
+        for (int i = 0; i < 256; i++) {
+            uint8_t by = emu_st->mem[i];
+            printf("%02x ", by);
+            if (i % 16 == 0) {
+                printf("\n");
+            }
+        }
+        // printf("mem dump not yet implemented.\n");
         break;
     }
     case INTERRUPT_DUMPSTK: {
@@ -284,7 +292,7 @@ void emu_run(EmulatorState *emu_st, ARG entry) {
     emu_st->executing = true;
     // emu_start decode loop
     while (emu_st->executing) {
-        // decode inemu_struction
+        // decode instruction
         ARG op = emu_st->mem[emu_st->reg[0]];
         ARG d1 = emu_st->mem[emu_st->reg[0] + 1];
         ARG d2 = emu_st->mem[emu_st->reg[0] + 2];
