@@ -285,7 +285,7 @@ void define_macro(ParserState *st, const char *name) {
     while (peek_token(st).kind != MARK) {
         Token arg = expect_token(st, IDENTIFIER); // expect an argument bind
         MacroArg arg_def;
-        arg_def.name = arg.cont;
+        arg_def.name = util_strdup(arg.cont);
         if (arg_def.name[0] == 'r') {
             arg_def.type = MACROARG_REG;
         } else if (arg_def.name[0] == 'v') {
