@@ -663,7 +663,7 @@ void write_compiled_program(FILE *ouf, CompiledProgram cmp) {
     // fwrite(&cmp.entry, sizeof(cmp.entry), 1, ouf); // entrypoint
     fwrite(&head.code_size, sizeof(head.code_size), 1, ouf); // code size
     fwrite(&head.data_size, sizeof(head.data_size), 1, ouf); // data size
-    printf("header[%d] \n", HEADER_SIZE);
+    printf("head[%02d] \n", HEADER_SIZE);
 
     // write data
     if (cmp.data) {
