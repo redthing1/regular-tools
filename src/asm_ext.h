@@ -46,7 +46,7 @@ SourceProgram compile_pseudo_instructions(SourceProgram src) {
             /*
                 set pc imm
             */
-            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RPC, in.a2.val, in.a3.val));
+            buf_push_AStatement(&prg.statements, IMM_STATEMENT(OP_SET, REG_RPC, in.a1.val, in.a2.val));
             break;
         }
         case OP_SWP: {
