@@ -123,6 +123,7 @@ void parser_state_cleanup(ParserState *st) {
             free(arg.name);
         }
         buf_free_MacroArg(&md.args);
+        buf_free_RawStatement(&md.statements);
     }
     buf_free_MacroDef(&st->macros);
 }
@@ -265,22 +266,40 @@ AStatement read_statement(ParserState *pst, const char *mnem, const char *a1, co
     return raw_stmt;
 }
 
-MacroArg match_macro_arg(MacroDef *md, const char *arg) {
+int match_macro_argdef(MacroDef *md, const char *arg) {
     for (size_t i = 0; i < md->args.ct; i++) {
         MacroArg arg_def = buf_get_MacroArg(&md->args, i);
         if (streq(arg_def.name, arg)) {
-            return arg_def;
+            return i;
         }
     }
-    return (MacroArg){.name = NULL, .type = MACROARG_VAL};
+    return -1;
 }
 
-void read_macro_statement(ParserState *pst, Buffie_AStatement statements, MacroDef *md) {
-    // unroll and expand the macro
-    printf("unrolling macro: %s\n", md->name);
-    // for now, eat the args
+void expand_macro(ParserState *pst, MacroDef *md, Buffie_AStatement *statements) {
+    // printf("unrolling macro: %s\n", md->name);
+    const char *inputs[md->args.ct];
+    // save the input args
     for (size_t i = 0; i < md->args.ct; i++) {
-        expect_token(pst, IDENTIFIER);
+        Token input_arg = expect_token(pst, IDENTIFIER);
+        inputs[i] = input_arg.cont;
+    }
+    // unroll and expand the macro
+    for (size_t i = 0; i < md->statements.ct; i++) {
+        // take the next statement
+        RawStatement raw_stmt = buf_get_RawStatement(&md->statements, i);
+        // replace the raw args with matching args, if applicable
+        int matched_argdef1 = match_macro_argdef(md, raw_stmt.a1);
+        if (matched_argdef1 >= 0)
+            raw_stmt.a1 = inputs[matched_argdef1];
+        int matched_argdef2 = match_macro_argdef(md, raw_stmt.a2);
+        if (matched_argdef2 >= 0)
+            raw_stmt.a2 = inputs[matched_argdef2];
+        int matched_argdef3 = match_macro_argdef(md, raw_stmt.a3);
+        if (matched_argdef3 >= 0)
+            raw_stmt.a3 = inputs[matched_argdef3];
+        AStatement st = read_statement(pst, raw_stmt.mnem, raw_stmt.a1, raw_stmt.a2, raw_stmt.a3);
+        buf_push_AStatement(statements, st);
     }
 }
 
@@ -305,7 +324,7 @@ void define_macro(ParserState *st, const char *name) {
     while (true) {
         Token next = peek_token(st);
         if (next.kind == MARK && streq(next.cont, "::")) {
-            // end of macro def
+            expect_token(st, MARK); // end of macro def
             break;
         }
         // otherwise, we should have an identifier
@@ -374,11 +393,22 @@ void reallocate_program_data(SourceProgram *src, size_t space) {
     }
 }
 
+void resolve_value_source(ParserState *pst, ValueSource *vs) {
+    if (vs->kind == VS_REF) {
+        vs->kind = VS_IMM;
+        int label_addr = resolve_label(pst, vs->ref.label);
+        vs->val = label_addr + vs->ref.add_offset;
+    }
+}
+
 void resolve_statements(SourceProgram *src, ParserState *pst) {
     for (size_t i = 0; i < src->statements.ct; i++) {
-        AStatement raw_stmt = buf_get_AStatement(&src->statements, i);
+        AStatement unres_stmt = buf_get_AStatement(&src->statements, i);
+        resolve_value_source(pst, &unres_stmt.a1);
+        resolve_value_source(pst, &unres_stmt.a2);
+        resolve_value_source(pst, &unres_stmt.a3);
         // TODO: resolve all value sources
-        buf_set_AStatement(&src->statements, i, raw_stmt);
+        buf_set_AStatement(&src->statements, i, unres_stmt);
     }
 }
 
@@ -471,7 +501,7 @@ SourceProgram parse(LexResult lexed) {
                         printf("unrecognized mnemonic: %s\n", mnem);
                     } else {
                         // expand the macro
-                        read_macro_statement(&st, src.statements, &md);
+                        expand_macro(&st, &md, &src.statements);
                         break;
                     }
                 } else { // fill in arguments
