@@ -5,12 +5,12 @@
     typedef struct Buffie_##TYPE {                                                                                     \
         TYPE *buf;                                                                                                     \
         size_t ct;                                                                                                     \
-        size_t sz;                                                                                                     \
+        size_t buf_sz;                                                                                                 \
     } Buffie_##TYPE;
 
 #define DECLARE_BUFFIE_FUNCS(TYPE)                                                                                     \
     void buf_alloc_##TYPE(Buffie_##TYPE *b, size_t count) {                                                            \
-        b->sz = count;                                                                                                 \
+        b->buf_sz = count;                                                                                             \
         b->ct = 0;                                                                                                     \
         b->buf = malloc(count * sizeof(TYPE));                                                                         \
     }                                                                                                                  \
@@ -20,9 +20,9 @@
                                                                                                                        \
     void buf_push_##TYPE(Buffie_##TYPE *b, TYPE val) {                                                                 \
         b->ct++;                                                                                                       \
-        if (b->sz <= b->ct) {                                                                                          \
-            b->sz = b->sz * 2;                                                                                         \
-            b->buf = realloc(b->buf, b->sz * sizeof(TYPE));                                                            \
+        if (b->buf_sz <= b->ct) {                                                                                      \
+            b->buf_sz = b->buf_sz * 2;                                                                                 \
+            b->buf = realloc(b->buf, b->buf_sz * sizeof(TYPE));                                                        \
         }                                                                                                              \
         buf_set_##TYPE(b, b->ct - 1, val);                                                                             \
     }                                                                                                                  \
@@ -32,7 +32,7 @@
     void buf_free_##TYPE(Buffie_##TYPE *b) {                                                                           \
         free(b->buf);                                                                                                  \
         b->ct = 0;                                                                                                     \
-        b->sz = 0;                                                                                                     \
+        b->buf_sz = 0;                                                                                                 \
         b->buf = NULL;                                                                                                 \
     }                                                                                                                  \
                                                                                                                        \
