@@ -64,12 +64,29 @@ typedef struct {
 
 BUFFIE_OF(LabelDef)
 
+typedef enum { MACROARG_REG, MACROARG_VAL } MacroArgType;
+
+typedef struct {
+    MacroArgType type; // REG, VAL
+    char *name;        // argument name
+} MacroArg;
+
+BUFFIE_OF(MacroArg)
+
+typedef struct {
+    char *name;
+    Buffie_MacroArg args;
+} MacroDef;
+
+BUFFIE_OF(MacroDef)
+
 typedef struct {
     LexResult *lexed;
     int token;              // token index
     int cpos;               // char position of reading
     int offset;             // binary output position
     Buffie_LabelDef labels; // label buffer
+    Buffie_MacroDef macros; // macro buffer
 } ParserState;
 
 void source_program_init(SourceProgram *p) {
@@ -84,6 +101,15 @@ void parser_state_cleanup(ParserState *st) {
     for (size_t i = 0; i < st->labels.ct; i++) {
         LabelDef ld = buf_get_LabelDef(&st->labels, i);
         free(ld.name);
+    }
+    // clean up macros
+    for (size_t i = 0; i < st->macros.ct; i++) {
+        MacroDef md = buf_get_MacroDef(&st->macros, i);
+        free(md.name);
+        for (size_t j = 0; j < md.args.ct; j++) {
+            MacroArg arg = buf_get_MacroArg(&md.args, j);
+            free(arg.name);
+        }
     }
 }
 
@@ -144,11 +170,27 @@ uint32_t parse_numeric(ParserState *st) {
     return val;
 }
 
-void define_macro(ParserState *st, const char *name) {}
+void define_macro(ParserState *st, const char *name) {
+    MacroDef def;
+    def.name = util_strdup(name);
+    buf_alloc_MacroArg(&def.args, 4);
+    while (peek_token(st).kind != MARK) {
+        Token arg = expect_token(st, IDENTIFIER); // expect an argument bind
+        MacroArg arg_def;
+        arg_def.name = arg.cont;
+        if (arg_def.name[0] == 'r') {
+            arg_def.type = MACROARG_REG;
+        } else if (arg_def.name[0] == 'v') {
+            arg_def.type = MACROARG_VAL;
+        }
+        buf_push_MacroArg(&def.args, arg_def);
+    }
+    expect_token(st, MARK); // eat the mark
+    // TODO: interpret the macro body
+}
 
 void define_label(ParserState *st, const char *name) {
-    char *label_name = malloc(strlen(name) + 1);
-    strcpy(label_name, name);
+    char *label_name = util_strdup(name);
     LabelDef ld = {.name = label_name, .offset = st->offset};
     buf_push_LabelDef(&st->labels, ld);
 }

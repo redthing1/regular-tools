@@ -101,3 +101,9 @@ char *util_strmk(size_t size) {
     str[0] = '\0';
     return str;
 }
+
+char* util_strdup(const char* str) {
+    char* dst = malloc(strlen(str) + 1);
+    strcpy(dst, str);
+    return dst;
+}

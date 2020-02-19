@@ -16,8 +16,9 @@ data1:
     #d \' hello ; data string support
     #d \x $00 ; null terminator
 
-; use BIND ("@") instead of MARK (":") to define a macro
-addi@ rA rB v0 ; this macro sets rA = rB + v0
+; use BIND ("@") to define a macro
+; the argument list is followed by MARK (":")
+addi@ rA rB v0 : ; this macro sets rA = rB + v0
     add rA rB v0
 
 main:
