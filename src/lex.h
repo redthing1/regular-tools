@@ -196,11 +196,14 @@ LexResult lex(char *buf, size_t buf_sz) {
     return res;
 }
 
-void free_lex_result(LexResult* lexed) {
+void free_lex_result(LexResult *lexed) {
     // free all tokens
     for (int i = 0; i < lexed->token_count; i++) {
         Token tok = buf_get_Token(&lexed->tokens, i);
-        free(tok.cont);
+        if (tok.cont) {
+            free(tok.cont);
+            tok.cont = NULL;
+        }
     }
     // free token buffie
     buf_free_Token(&lexed->tokens);
